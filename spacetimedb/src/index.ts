@@ -1,9 +1,8 @@
-// server api
-
+// server api module
 import { ScheduleAt } from 'spacetimedb';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
-console.log("db test");
+// console.log("db test");
 
 const user = table(
   { 
@@ -12,8 +11,19 @@ const user = table(
   },
   {
     identity: t.identity().primaryKey(),
+    id:t.u64().autoInc(),
     name: t.string().optional(),
     online: t.bool(),
+  }
+);
+
+const userAvatar = table(
+  { name: 'user_avatar', public: true },
+  {
+    userId: t.u64().primaryKey(),
+    mimeType: t.string(),
+    data: t.array(t.u8()),  // Binary data stored inline
+    uploadedAt: t.timestamp(),
   }
 );
 
@@ -28,8 +38,88 @@ const message = table(
 
 const spacetimedb = schema({
   user,
+  userAvatar,
   message,
 });
+
+
+export const upload_avatar = spacetimedb.reducer({
+  userId: t.u64(),
+  mimeType: t.string(),
+  data: t.array(t.u8()),
+}, (ctx, { userId, mimeType, data }) => {
+
+  const user = ctx.db.user.identity.find(ctx.sender);
+  console.log(user);
+
+  if(user){
+    console.log("user: ", user);
+    console.log("mimeType: ", mimeType);
+    console.log("data: ", data);
+    // Delete existing avatar if present
+    ctx.db.userAvatar.userId.delete(user.id);
+
+    // Insert new avatar
+    ctx.db.userAvatar.insert({
+      userId:user.id,
+      mimeType,
+      data,
+      uploadedAt: ctx.timestamp,
+    });
+  }
+});
+
+export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
+  console.log("ctx.db.userAvatar.count(): ", ctx.db.userAvatar.count());
+  const user = ctx.db.user.identity.find(ctx.sender);
+
+  if(user){
+    console.log("user id exist:", ctx.db.userAvatar.userId.find(user.id));
+    for (const row of ctx.db.userAvatar.iter()) {
+      console.log("Found avatar for user:", row.userId);
+      // Do something with row.data...
+      // console.log(row );
+    }
+  }
+});
+
+export const get_avatar = spacetimedb.procedure(
+  { id:t.u64() }, 
+  // t.object('Name', { data: t.array(t.u8()),type:t.string()  }),
+  // t.object('AvatarResult', { 
+  t.object('Name', { 
+    data: t.option(t.array(t.u8())), 
+    type: t.string() 
+  }),
+  (ctx,{id})=>{
+  // let data=null;
+  // let type=null;
+  let file = ctx.withTx(ctx => {
+    const user = ctx.db.user.identity.find(ctx.sender);
+    if(user){
+      const user_avatar = ctx.db.userAvatar.userId.find(user.id);
+      console.log("user id exist:", user_avatar?.userId);
+      if(user_avatar){
+        // data = user_avatar.data;
+        // type = user_avatar.mimeType;
+        return { data: user_avatar.data, type: user_avatar.mimeType };
+      }
+      return null;
+    }
+  });
+  // console.log("test", test);
+  // console.log("test", test?.type);
+  console.log("test");
+  if(file){
+    return {data:file?.data, type:file?.type};
+  }else{
+    return { data: undefined, type: "" };
+  }
+  
+  // return {data:"ss",type:"test"}
+  // return {data:data,type:type}
+})
+
 
 
 export const init = spacetimedb.init(_ctx => {
@@ -44,11 +134,11 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
   } else {
     ctx.db.user.insert({
       identity: ctx.sender,
+      id:0n,
       name: undefined,
       online: true,
     });
   }
-
 });
 
 export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
@@ -94,7 +184,5 @@ export const send_message = spacetimedb.reducer({ text: t.string() }, (ctx, { te
   });
 });
 
-
-
 export default spacetimedb;
-console.log("spacetime-app-game");
+console.log("spacetime-app-chat");

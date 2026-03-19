@@ -3,33 +3,52 @@
 # Licence: MIT
 
 # SpaceTimeDB:
-- binary application 2.0.5
-- npm 2.0.4
-- 
+- spacetimedb binary 2.0.5
+- npm spacetimedb 2.0.4
+
+# Features:
+- upload image
+- get image
+- user
+- message
+- simple ui
 
 # Information:
-  Work in progress just empty project base on spacetimedb and typescript.
+  Work in progress. Simple chat test.
 
-# set up and config
+  SpaceTimeDB is all one database and server module for typescript. Read more on SpaceTimeDB. 
 
-  SpaceTimeDB set up for server and database application.
+# Set Up and Config
+ - Required SpaceTimeDB install. https://spacetimedb.com/
+ - Required Bun. https://bun.com/
 
+# SpaceTimeDB start:
 ```
 spacetime start
 ```
 - start database and server application.
 - note it need to run on terminal.
+
+```
+spacetime dev --server local
+```
+- build, run, watch files changes.
+- debug logs
+
+# SpaceTimeDB publish:
 ```
 spacetime publish --server local --module-path spacetimedb spacetime-app-chat
 ```
 - run spacetime to push module app
 - This support Typescript to push to module to run server for clients to access web socket.
+# SpaceTimeDB logs:
 ```
 spacetime logs -s local -f spacetime-app-chat 
 ```
 - Note this run another terminal to access spacetimedb client to log for database name.
 - log datbase spacetime-app-chat debug 
 
+# SpaceTimeDB generate client module:
 ```
 spacetime generate --lang typescript --out-dir src/module_bindings --module-path spacetimedb
 ```
@@ -37,20 +56,22 @@ spacetime generate --lang typescript --out-dir src/module_bindings --module-path
 - note this export typescript.
 - it can be use for export to client
 
+# SpaceTimeDB delete database:
 ```
-spacetime publish --server local --module-path spacetimedb spacetime-app-chat --delete-data
+spacetime publish --server local spacetime-app-chat --delete-data
 ```
 - clear data
+- in case of table fail to update change.
 
-``` 
-spacetime publish --server local --delete-data spacetime-app-chat
+# spacetimedb sql:
+```
+spacetime sql --server local spacetime-app-chat "SELECT * FROM user"
 ```
 
 ```
-spacetime delete spacetime-app-chat --server local
+spacetime sql --server local spacetime-app-chat "SELECT * FROM user_avatar"
 ```
 
 # refs:
 - https://spacetimedb.com/docs/functions/views
 - https://spacetimedb.com/docs/functions/procedures
-- 
