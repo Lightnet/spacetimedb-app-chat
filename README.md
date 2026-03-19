@@ -4,19 +4,29 @@
 
 # SpaceTimeDB:
 - spacetimedb binary 2.0.5
-- npm spacetimedb 2.0.4
+
+# NPM Package:
+- vanjs 1.6.0
+- spacetimedb 2.0.4
 
 # Features:
-- upload image
-- get image
-- user
-- message
-- simple ui
+- upload image ( buffer )
+- get image ( two method procedure or view)
+- user ( simple account no password)
+- message (simple message)
+- direct message ( n/a )
+- simple chat ui 
 
 # Information:
   Work in progress. Simple chat test.
 
-  SpaceTimeDB is all one database and server module for typescript. Read more on SpaceTimeDB.
+  SpaceTimeDB is all one database and server module for typescript. Read more on SpaceTimeDB. It use the web socket and module api from SpaceTimeDB cli command export and import module for server and client plugins design. By default use token ID generate from SpaceTimeDB and no ip tracking. It is anonymous by default just normal browser access vist the sites.
+
+  As for ip address might due to Web Assembly in case of bad actors. As they wanted to be anonymous and prevent leaks in sandbox for module api. Which required proxy or third party application to handle ip tracking for ban or blocking in case of spam and other things. Another way is third party auth application to handle access.
+  
+  Note have not read full docs which take a while to read it.
+
+  The only way is the dev way to handle the filter of the ip and auth in their own ways. For this project to test SpaceTimeDB to handle chat messages.
 
 # SpaceTimeDB view:
 - The view is read only when filter query.
@@ -54,7 +64,6 @@ export const user_current_avatar = spacetimedb.view(
     })
 //...
 ```
-
 
 # Set Up and Config
  - Required SpaceTimeDB install. https://spacetimedb.com/
