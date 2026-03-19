@@ -16,7 +16,45 @@
 # Information:
   Work in progress. Simple chat test.
 
-  SpaceTimeDB is all one database and server module for typescript. Read more on SpaceTimeDB. 
+  SpaceTimeDB is all one database and server module for typescript. Read more on SpaceTimeDB.
+
+# SpaceTimeDB view:
+- The view is read only when filter query.
+## server module:
+```js
+// https://spacetimedb.com/docs/functions/views
+export const user_current_avatar = spacetimedb.view(
+  { 
+    name: 'user_current_avatar',
+    public: true 
+  },
+  t.option(userAvatar.rowType),
+  (ctx) => {
+    const user = ctx.db.user.identity.find(ctx.sender);
+    if(user){
+      const user_avatar = ctx.db.userAvatar.userId.find(user.id);
+      if(user_avatar){
+        return user_avatar; 
+      }
+    }
+    return undefined;
+});
+```
+## Client:
+```js
+//...
+    // current user avatar image listen
+    conn
+      .subscriptionBuilder()
+        .subscribe(tables.user_current_avatar);
+    // current user avatar image
+    conn.db.user_current_avatar.onInsert((ctx, row)=>{
+      console.log(row);
+      displayAvatar(row.data, row.type); // load image helper
+    })
+//...
+```
+
 
 # Set Up and Config
  - Required SpaceTimeDB install. https://spacetimedb.com/
@@ -67,7 +105,6 @@ spacetime publish --server local spacetime-app-chat --delete-data
 ```
 spacetime sql --server local spacetime-app-chat "SELECT * FROM user"
 ```
-
 ```
 spacetime sql --server local spacetime-app-chat "SELECT * FROM user_avatar"
 ```

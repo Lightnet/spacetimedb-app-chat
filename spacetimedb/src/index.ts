@@ -83,6 +83,7 @@ export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
   }
 });
 
+// testing get image
 export const get_avatar = spacetimedb.procedure(
   { id:t.u64() }, 
   // t.object('Name', { data: t.array(t.u8()),type:t.string()  }),
@@ -119,7 +120,20 @@ export const get_avatar = spacetimedb.procedure(
   // return {data:"ss",type:"test"}
   // return {data:data,type:type}
 })
-
+// https://spacetimedb.com/docs/functions/views
+export const user_current_avatar = spacetimedb.view(
+  { name: 'user_current_avatar', public: true },
+  t.option(userAvatar.rowType),
+  (ctx) => {
+    const user = ctx.db.user.identity.find(ctx.sender);
+    if(user){
+      const user_avatar = ctx.db.userAvatar.userId.find(user.id);
+      if(user_avatar){
+        return user_avatar; 
+      }
+    }
+    return undefined;
+});
 
 
 export const init = spacetimedb.init(_ctx => {

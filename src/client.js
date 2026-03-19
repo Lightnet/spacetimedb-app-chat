@@ -35,6 +35,13 @@ async function counts(){
   displayAvatar(avatarData.data, avatarData.type);
 }
 
+async function get_current_avatar(){
+  //need to use await.
+  const avatarData = await conn.procedures.getAvatar({id:1n});
+  console.log(avatarData);
+  displayAvatar(avatarData.data, avatarData.type);
+}
+
 
 const user_avatar = div(
   el_file,
@@ -129,6 +136,19 @@ const conn = DbConnection.builder()
         label(row.text),
       ))
     });
+
+    // test load image
+    //get_current_avatar();
+
+    // user avatar image listen
+    conn
+      .subscriptionBuilder()
+        .subscribe(tables.user_current_avatar);
+    // current user avatar image
+    conn.db.user_current_avatar.onInsert((ctx, row)=>{
+      console.log(row);
+      displayAvatar(row.data, row.type);
+    })
 
   })
   .onDisconnect(() => {
