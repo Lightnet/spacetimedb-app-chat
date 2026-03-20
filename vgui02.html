@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BlackSteam Chat – VanJS + vgui.css</title>
+  <!-- vgui.css blacksteam theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/AlpyneDreams/vgui.css@main/styles/blacksteam/blacksteam.css">
+  <!-- VanJS (latest minified from official CDN) -->
+  <!-- <script src="https://cdn.jsdelivr.net/gh/vanjs-org/van@latest/dist/van.min.js"></script> -->
+  
+  <style>
+    /* Minor tweaks to make it feel more like a chat window */
+    body {
+      margin: 0;
+      font-family: Tahoma, Verdana, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .window {
+      width: 420px;
+      height: 580px;
+      display: flex;
+      flex-direction: column;
+      /* box-shadow: 0 0 20px rgba(0,255,0,0.15); */
+    }
+    
+    /* .titlebar {
+      background: linear-gradient(to bottom, #1e3a1e, #0f220f);
+      color: #c0ff00;
+      padding: 6px 10px;
+      font-weight: bold;
+      border-bottom: 2px solid #2e5c2e;
+      user-select: none;
+    } */
+    
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 8px 12px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+    
+    .message.sent {
+      align-self: flex-end;
+      background: #2e5c2e;
+      color: white;
+    }
+    
+    .message.received {
+      align-self: flex-start;
+      background: #1e3a1e;
+      border: 1px solid #3a6a3a;
+    }
+    
+    .message .name {
+      font-weight: bold;
+      color: #aaff00;
+      margin-bottom: 3px;
+      display: block;
+    }
+    
+    .input-area {
+      display: flex;
+      padding: 10px;
+      background: #0f0f0f;
+      border-top: 2px solid #2e5c2e;
+    }
+    
+    /* #message-input {
+      flex: 1;
+      min-height: 34px;
+      resize: none;
+    } */
+
+    .message-input {
+      flex: 1;
+      min-height: 34px;
+      resize: none;
+    }
+    
+    button {
+      margin-left: 8px;
+      min-width: 70px;
+    }
+  </style>
+</head>
+<body>
+
+<script type="module">
+import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.6.0.min.js";
+const { div, textarea, button, span } = van.tags;
+
+// DOM fragment builder for a single message
+const Message = ({side, name, text}) => div(
+  {class: () => `message ${side}`},
+  name && span({class: "name"}, name + ":"),
+  text
+)
+
+function chat_window(){
+
+  const message_input = van.state('');
+  // Reactive state
+  const messages = van.state([
+    { side: "received", name: "test", text: "Welcome to the black edition chatroom." },
+    { side: "sent", name: "You", text: "hello sir, any new?" },
+  ])
+
+  const messageElements = van.derive(() =>{
+    return div(
+      messages.val.map(msg => Message(msg))
+    )
+  });
+
+  function enter_send(e){
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  const sendMessage = () => {
+    // const text = input.value.trim()
+    const text = message_input.val.trim()
+    if (!text) return
+    
+    messages.val = [
+      ...messages.val,
+      { side: "sent", name: "You", text }
+    ]
+    
+    message_input.val = ""
+    // message_input.focus()
+    
+    // Fake reply after short delay (demo only)
+    setTimeout(() => {
+      console.log("test reply");
+      messages.val = [
+        ...messages.val,
+        { side: "received", name: "test", text: ["Waiting for...", "Soon™", "Check your inventory"][Math.floor(Math.random()*3)] }
+      ]
+    }, 800 + Math.random()*1200)
+  }
+
+  // Auto-scroll to bottom when new messages arrive
+  van.derive(() => {
+    messages.val  // just trigger on change
+    setTimeout(() => {
+      const el = document.getElementById("chat-messages")
+      el.scrollTop = el.scrollHeight
+    }, 50)
+  })
+
+  return div({class: "window headless"},
+    div({class: "titlebar"}, "BlackSteam Chat"),
+    div({id: "chat-messages"},
+      messageElements
+    ),
+    div({class: "input-area"},
+      textarea({
+        class:"message-input",
+        // id: "message-input",
+        value:message_input,
+        oninput:e=>message_input.val=e.target.value, 
+        onkeydown:enter_send, 
+        placeholder: "Type a message..."
+      }),
+      button({onclick:sendMessage}, "Send")
+    )
+  )
+}
+van.add(document.body,chat_window());
+
+</script>
+
+</body>
+</html>
