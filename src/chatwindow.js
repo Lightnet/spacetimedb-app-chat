@@ -3,11 +3,60 @@
 import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.6.0.min.js";
 const { div, textarea, button, span } = van.tags;
 
+
+// Add this function somewhere in your file (e.g. before return)
+function makeDraggable(element) {
+  let pos = { x: 0, y: 0, startX: 0, startY: 0 };
+
+  const onMouseMove = (e) => {
+    if (!pos.active) return;
+    
+    e.preventDefault();
+    
+    // Calculate new position
+    pos.x = pos.startX + (e.clientX - pos.startMouseX);
+    pos.y = pos.startY + (e.clientY - pos.startMouseY);
+
+    // Apply position
+    element.style.left = pos.x + "px";
+    element.style.top  = pos.y + "px";
+  };
+
+  const onMouseUp = () => {
+    pos.active = false;
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup",   onMouseUp);
+  };
+
+  element.addEventListener("mousedown", (e) => {
+    // Only drag when clicking on titlebar (not on buttons)
+    if (e.target.closest(".titlebar-controls")) return;
+
+    e.preventDefault();
+    
+    pos.active = true;
+    pos.startMouseX = e.clientX;
+    pos.startMouseY = e.clientY;
+    
+    // Current position of window
+    const rect = element.getBoundingClientRect();
+    pos.startX = rect.left;
+    pos.startY = rect.top;
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup",   onMouseUp);
+  });
+}
+
+
 const Message = ({side, name, text}) => div(
   {class: () => `message ${side}`},
   name && span({class: "name"}, name),
   text
 );
+
+
+
 
 export function ChatWindow() {
   const messageInput = van.state("");
@@ -56,7 +105,8 @@ export function ChatWindow() {
   // watch change to update render
   const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
 
-  return div({class: "window"},
+  // Create the window element
+  const windowEl = div({class: "window"},
     div({class: "titlebar"},
       div({class: "title"}, "Black Chat — Friends"),
       div({class: "titlebar-controls"},
@@ -83,4 +133,15 @@ export function ChatWindow() {
       button({class: "send-btn", onclick: sendMessage}, "Send")
     )
   );
+
+  // Make it draggable
+  van.derive(() => {
+    // Wait until mounted
+    if (windowEl.isConnected) {
+      makeDraggable(windowEl);
+    }
+  });
+
+  return windowEl;
+
 }

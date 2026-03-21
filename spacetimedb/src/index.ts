@@ -2,8 +2,9 @@
 import { ScheduleAt } from 'spacetimedb';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
-// console.log("db test");
-
+//-----------------------------------------------
+// TABLES
+//-----------------------------------------------
 const user = table(
   { 
     name: 'user', 
@@ -41,8 +42,9 @@ const spacetimedb = schema({
   userAvatar,
   message,
 });
-
-
+//-----------------------------------------------
+// UPLOAD AVATAR IMAGE
+//-----------------------------------------------
 export const upload_avatar = spacetimedb.reducer({
   userId: t.u64(),
   mimeType: t.string(),
@@ -50,12 +52,12 @@ export const upload_avatar = spacetimedb.reducer({
 }, (ctx, { userId, mimeType, data }) => {
 
   const user = ctx.db.user.identity.find(ctx.sender);
-  console.log(user);
+  // console.log(user);
 
   if(user){
-    console.log("user: ", user);
-    console.log("mimeType: ", mimeType);
-    console.log("data: ", data);
+    // console.log("user: ", user);
+    // console.log("mimeType: ", mimeType);
+    // console.log("data: ", data);
     // Delete existing avatar if present
     ctx.db.userAvatar.userId.delete(user.id);
 
@@ -68,13 +70,15 @@ export const upload_avatar = spacetimedb.reducer({
     });
   }
 });
-
+//-----------------------------------------------
+// USER CURRENT CLIENT AVATAR COUNT
+//-----------------------------------------------
 export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
   console.log("ctx.db.userAvatar.count(): ", ctx.db.userAvatar.count());
   const user = ctx.db.user.identity.find(ctx.sender);
 
   if(user){
-    console.log("user id exist:", ctx.db.userAvatar.userId.find(user.id));
+    // console.log("user id exist:", ctx.db.userAvatar.userId.find(user.id));
     for (const row of ctx.db.userAvatar.iter()) {
       console.log("Found avatar for user:", row.userId);
       // Do something with row.data...
@@ -82,13 +86,15 @@ export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
     }
   }
 });
-
+//-----------------------------------------------
+// GET CURRENT AVATAR IMAGE
+//-----------------------------------------------
 // testing get image
 export const get_avatar = spacetimedb.procedure(
   { id:t.u64() }, 
   // t.object('Name', { data: t.array(t.u8()),type:t.string()  }),
   // t.object('AvatarResult', { 
-  t.object('Name', { 
+  t.object('Name', { //return data if exist
     data: t.option(t.array(t.u8())), 
     type: t.string() 
   }),
@@ -99,7 +105,7 @@ export const get_avatar = spacetimedb.procedure(
     const user = ctx.db.user.identity.find(ctx.sender);
     if(user){
       const user_avatar = ctx.db.userAvatar.userId.find(user.id);
-      console.log("user id exist:", user_avatar?.userId);
+      // console.log("user id exist:", user_avatar?.userId);
       if(user_avatar){
         // data = user_avatar.data;
         // type = user_avatar.mimeType;
@@ -110,7 +116,7 @@ export const get_avatar = spacetimedb.procedure(
   });
   // console.log("test", test);
   // console.log("test", test?.type);
-  console.log("test");
+  // console.log("test");
   if(file){
     return {data:file?.data, type:file?.type};
   }else{
@@ -120,10 +126,13 @@ export const get_avatar = spacetimedb.procedure(
   // return {data:"ss",type:"test"}
   // return {data:data,type:type}
 })
+//-----------------------------------------------
+// GET CURRENT AVATAR IMAGE VIEW
+//-----------------------------------------------
 // https://spacetimedb.com/docs/functions/views
 export const user_current_avatar = spacetimedb.view(
   { name: 'user_current_avatar', public: true },
-  t.option(userAvatar.rowType),
+  t.option(userAvatar.rowType),//return row data if exist
   (ctx) => {
     const user = ctx.db.user.identity.find(ctx.sender);
     if(user){
@@ -135,14 +144,22 @@ export const user_current_avatar = spacetimedb.view(
     return undefined;
 });
 
-
+//-----------------------------------------------
+// INIT
+//-----------------------------------------------
 export const init = spacetimedb.init(_ctx => {
   console.log("===============INIT SPACETIMEDB APP NAME:::=========");
 });
-
+//-----------------------------------------------
+// ON CLIENT CONNECT
+//-----------------------------------------------
 export const onConnect = spacetimedb.clientConnected(ctx => {
   const user = ctx.db.user.identity.find(ctx.sender);
+  // console.log("ctx: ",ctx);
+  // console.log("connectionId: ",ctx.connectionId); //socket id ???
+  // console.log("connectionId: ",ctx.connectionId?.toHexString());
   console.log("SENDER: ",ctx.sender);
+  console.log("SENDER: ",ctx.sender.toHexString());
   if (user) {
     ctx.db.user.identity.update({ ...user, online: true });
   } else {
@@ -154,7 +171,9 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
     });
   }
 });
-
+//-----------------------------------------------
+// ON CLIENT DISCONNECT
+//-----------------------------------------------
 export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
   const user = ctx.db.user.identity.find(ctx.sender);
   if (user) {
@@ -165,13 +184,17 @@ export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
     );
   }
 });
-
+//-----------------------------------------------
+// VALID NAME
+//-----------------------------------------------
 function validateName(name: string) {
   if (!name) {
     throw new SenderError('Names must not be empty');
   }
 }
-
+//-----------------------------------------------
+// SET USER NAME
+//-----------------------------------------------
 export const set_name = spacetimedb.reducer({ name: t.string() }, (ctx, { name }) => {
   // console.info("Name: ",name);
   validateName(name);
@@ -187,7 +210,9 @@ function validateMessage(text: string) {
     throw new SenderError('Messages must not be empty');
   }
 }
-
+//-----------------------------------------------
+// SEND MESSAGE
+//-----------------------------------------------
 export const send_message = spacetimedb.reducer({ text: t.string() }, (ctx, { text }) => {
   validateMessage(text);
   console.info(`User ${ctx.sender}: ${text}`);
@@ -197,6 +222,8 @@ export const send_message = spacetimedb.reducer({ text: t.string() }, (ctx, { te
     sent: ctx.timestamp,
   });
 });
-
+//-----------------------------------------------
+// EXPORT DATABASE
+//-----------------------------------------------
 export default spacetimedb;
 console.log("spacetime-app-chat");
