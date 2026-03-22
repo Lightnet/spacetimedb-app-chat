@@ -2,7 +2,6 @@
 import { ScheduleAt } from 'spacetimedb';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
-
 // Define an enum for status
 // const Status = t.enum('Status', {
 //   Active: t.unit(),
@@ -36,7 +35,9 @@ const user = table(
     created_at:   t.timestamp(),
   }
 );
-
+//-----------------------------------------------
+// Avatar Image Data Store
+//-----------------------------------------------
 const userAvatar = table(
   { name: 'user_avatar', public: true },
   {
@@ -47,19 +48,188 @@ const userAvatar = table(
   }
 );
 
-const message = table(
-  { name: 'message', public: true },
+//-----------------------------------------------
+// Server
+//-----------------------------------------------
+// const server = table(
+//   { name: 'server', public: true },
+//   {
+//     id:t.u64().primaryKey().autoInc(),
+//     senderId: t.identity(),
+//     name: t.string(),
+//     content: t.string().optional(),
+//     status: t.string().optional(),
+//     createdAt: t.timestamp(),
+//   }
+// );
+//-----------------------------------------------
+// Category
+//-----------------------------------------------
+// const category = table(
+//   { name: 'category', public: true },
+//   {
+//     id:t.u64().primaryKey().autoInc(),
+//     parentId:t.u64(),
+//     senderId: t.identity(),
+//     name: t.string(),
+//     content: t.string().optional(),
+//     status: t.string().optional(),
+//     createdAt: t.timestamp(),
+//   }
+// );
+//-----------------------------------------------
+// Text Channel
+//-----------------------------------------------
+const textChannel = table(
+  { name: 'text_channel', public: true },
   {
-    sender: t.identity(),
-    sent: t.timestamp(),
-    text: t.string(),
+    id:t.u64().primaryKey().autoInc(),
+    parentId:t.u64(),
+    senderId: t.identity(),
+    name: t.string(),
+    content: t.string().optional(),
+    status: t.string().optional(),
+    createdAt: t.timestamp(),
   }
 );
 
+const textChannelMember  = table(
+  { name: 'text_channel_member', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    parentId:t.u64(),
+    senderId: t.identity(),
+    role: t.string().optional(),
+    content: t.string().optional(),
+    status: t.string().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+
+const textChannelMessage  = table(
+  { name: 'text_channel_message', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    parentId:t.u64(),
+    senderId: t.identity(),
+    content: t.string().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+//-----------------------------------------------
+// Group Chat
+//-----------------------------------------------
+const groupChat = table(
+  { name: 'group_chat', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    parentId:t.u64(),
+    senderId: t.identity(),
+    name: t.string(),
+    content: t.string().optional(),
+    status: t.string().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+// list member to talk group.
+const groupMember = table(
+  { name: 'group_member', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    groupId:t.u64(),
+    memberId: t.identity(),
+    status: t.string().optional(),
+    role: t.string().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+
+//-----------------------------------------------
+// Group Message
+//-----------------------------------------------
+const groupMessage = table(
+  { name: 'group_message', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    groupId:t.u64(),
+    senderId: t.identity(),
+    content: t.string(),
+    createdAt: t.timestamp(),
+  }
+);
+
+//-----------------------------------------------
+// Message
+//-----------------------------------------------
+const message = table(
+  { name: 'message', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    senderId: t.identity(),
+    content: t.string(),
+    createdAt: t.timestamp(),
+  }
+);
+//-----------------------------------------------
+// Direct Message
+//-----------------------------------------------
+const directMessage = table(
+  { name: 'direct_message', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    senderId: t.identity(),       // who sent it
+    recipientId : t.identity(),   // the other person (in 1:1)
+    content: t.string(),
+    status: t.string().optional(),
+    readAt: t.timestamp().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+
+//-----------------------------------------------
+// 
+//-----------------------------------------------
+
+const BoardMessage = table(
+  { name: 'board_message', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    userId: t.identity(),
+    parentId: t.u64().optional(),
+    subject: t.string(),
+    content: t.string(),
+    createdAt: t.timestamp(),
+  }
+);
+
+const BoardTopic = table(
+  { name: 'board_topic', public: true },
+  {
+    id:t.u64().primaryKey().autoInc(),
+    userId: t.identity(),
+    parentId: t.u64().optional(),
+    subject: t.string(),
+    content: t.string(),
+    createdAt: t.timestamp(),
+  }
+);
+
+
+
+//-----------------------------------------------
+// SPACETIME SCHEMA
+//-----------------------------------------------
 const spacetimedb = schema({
   user,
   userAvatar,
   message,
+  directMessage,
+  groupChat,
+  groupMember,
+  groupMessage,
+  textChannel,
+  textChannelMember,
+  textChannelMessage
 });
 //-----------------------------------------------
 // UPLOAD AVATAR IMAGE
@@ -156,9 +326,7 @@ export const user_current_avatar = spacetimedb.view(
     const user = ctx.db.user.identity.find(ctx.sender);
     if(user){
       const user_avatar = ctx.db.userAvatar.userId.find(user.id);
-      if(user_avatar){
-        return user_avatar; 
-      }
+      return user_avatar ?? undefined; 
     }
     return undefined;
 });
@@ -245,6 +413,21 @@ export const set_custom_status = spacetimedb.reducer({ text: t.string() }, (ctx,
   ctx.db.user.identity.update({ ...user, custom_status:text });
 });
 //-----------------------------------------------
+// USER CURRENT STATUS
+//-----------------------------------------------
+export const current_user = spacetimedb.view(
+  { name: 'current_user', public: true },
+  t.option(user.rowType), // return row data if exist
+  (ctx) => {
+    const _user = ctx.db.user.identity.find(ctx.sender);
+    if(_user){
+      console.log("user: ", _user);
+      return _user;
+    }
+  return undefined;
+});
+
+//-----------------------------------------------
 // SEND MESSAGE
 //-----------------------------------------------
 function validateMessage(text: string) {
@@ -257,13 +440,91 @@ export const send_message = spacetimedb.reducer({ text: t.string() }, (ctx, { te
   validateMessage(text);
   console.info(`User ${ctx.sender}: ${text}`);
   ctx.db.message.insert({
-    sender: ctx.sender,
-    text,
-    sent: ctx.timestamp,
+    id:0n,
+    senderId: ctx.sender,
+    content:text,
+    createdAt: ctx.timestamp,
   });
 });
+//-----------------------------------------------
+// SEND DIRECT MESSAGE
+//-----------------------------------------------
+export const send_direct_message = spacetimedb.reducer(
+  {toId:t.string(), text: t.string() },
+  (ctx, { toId, text }) => {
+  validateMessage(text);
+  console.info(`User ${ctx.sender}: ${text}`);
+
+  ctx.db.directMessage.insert({
+    id:0n,
+    senderId: ctx.sender,
+    recipientId: ctx.sender,
+    content:text,
+    status:undefined,
+    readAt:undefined,
+    createdAt: ctx.timestamp,
+  });
+
+});
+
+//-----------------------------------------------
+// GROUP MESSAGE
+//-----------------------------------------------
+
+export const create_group_chat = spacetimedb.reducer(
+  {name:t.string(), content: t.string() },
+  (ctx, { name, content }) => {
+  validateMessage(name);
+  console.info(`User ${ctx.sender}: ${name}`);
+
+  const group = ctx.db.groupChat.insert({
+    status: undefined,
+    id: 0n,
+    name: name,
+    senderId: ctx.sender,
+    content: content,
+    createdAt: ctx.timestamp,
+    parentId: 0n
+  });
+
+  console.log("group:", group);
+
+  if(group){
+    ctx.db.groupMember.insert({
+      status: undefined,
+      id: 0n,
+      createdAt: ctx.timestamp,
+      groupId: group.id,
+      memberId: ctx.sender,
+      role: 'admin'
+    });
+  }
+});
+
+// need to check for admin before delete checks.
+export const delete_group_chat = spacetimedb.reducer(
+  {id:t.u64() },
+  (ctx, { id }) => {
+  console.info(`DELETE Group Chat: ${ctx.sender}: ${id}`);
+
+  ctx.db.groupChat.id.delete(id);
+
+  //look for groupid to delete members.
+  for (const member of ctx.db.groupMember.iter()){
+    if (member.groupId == id){
+      ctx.db.groupMember.delete(member);
+    }
+  }
+});
+
+// need to delete group chat messages
+
+
+
+
 //-----------------------------------------------
 // EXPORT DATABASE
 //-----------------------------------------------
 export default spacetimedb;
 console.log("spacetime-app-chat");
+

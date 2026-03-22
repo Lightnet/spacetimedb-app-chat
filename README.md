@@ -21,8 +21,10 @@
 - message (simple message)
 - direct message ( n/a )
 - simple chat ui 
+- group chat
 
-# project files:
+
+# Project files:
 - index.html
 - chathub.html
 

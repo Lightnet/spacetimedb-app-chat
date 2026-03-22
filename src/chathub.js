@@ -6,7 +6,6 @@ import van from "vanjs-core";
 import { networkStatus, userIdentity, userName, userStatus, userAvatarUrl } from './context.js';
 import { Modal } from "vanjs-ui";
 
-
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
 const HOST = 'ws://localhost:3000';
@@ -18,6 +17,8 @@ const DB_NAME = 'spacetime-app-chat';
 // const el_status = van.state('Offline');
 // const username = van.state('Guest');
 
+const groupChatEl = div();
+
 //-----------------------------------------------
 //
 //-----------------------------------------------
@@ -27,12 +28,11 @@ const conn = DbConnection.builder()
   .withToken(localStorage.getItem('auth_token') || undefined)
   .onConnect((conn, identity, token) => {
     networkStatus.val = 'Connected';
-    console.log("identity: ", identity);
+    // console.log("identity: ", identity);
     console.log("identity: ", identity.toHexString());
-    console.log("conn: ", conn);
+    // console.log("conn: ", conn);
     // filter from table update calls...
     userIdentity.val = identity;
-
     initDB();
   })
   .onDisconnect(() => {
@@ -50,6 +50,7 @@ const conn = DbConnection.builder()
 function initDB(){
   setUpDBUser();
   setupDataBaseAvatar();
+  setupDBGroupChat();
 }
 
 function setUpDBUser(){
@@ -58,22 +59,21 @@ function setUpDBUser(){
     .onError((ctx, error) => {
       console.error(`Subscription failed: ${error}`);
     })
-    .subscribe(tables.user);
+    .subscribe(tables.current_user);
 
-  conn.db.user.onInsert((ctx, row)=>{
-    console.log('insert user row');
-    console.log(row);
+  conn.db.current_user.onInsert((ctx, row)=>{
+    // console.log('insert current user row');
+    // console.log(row);
     if(row.identity.toHexString() == conn.identity.toHexString()){
       // console.log("found current ID:", conn.identity.toHexString());
-      console.log("Name: ",row.name)
+      // console.log("Name: ",row.name)
       userName.val = row.name ?? 'Uknown';
       userStatus.val = row.customStatus ?? 'Idle';
     }
   });
 
-
-  conn.db.user.onUpdate((ctx, oldRow, newRow)=>{
-    // console.log('insert user row');
+  conn.db.current_user.onUpdate((ctx, oldRow, newRow)=>{
+    // console.log('insert current user row');
     // console.log(newRow);
     if(newRow.identity.toHexString() == conn.identity.toHexString()){
       // console.log("found current ID:", conn.identity.toHexString());
@@ -82,42 +82,85 @@ function setUpDBUser(){
       userStatus.val = newRow.customStatus ?? 'Idle';
     }
   });
-
+}
+//-----------------------------------------------
+// CREATE IMAGE AND LOAD TMP URL OBJECT
+//-----------------------------------------------
+function displayAvatar(bytes, mimeType) {
+  // 1. Create a Blob from the Uint8Array and the stored MIME type
+  const blob = new Blob([bytes], { type: mimeType });
+  // 2. Generate a temporary URL for the browser
+  const imageUrl = URL.createObjectURL(blob);
+  // 3. Set it as an <img> source
+  // document.getElementById('avatarDisplay').src = imageUrl;
+  // avatar_image.src = imageUrl;
+  // console.log(imageUrl);
+  userAvatarUrl.val = imageUrl;
+}
+//-----------------------------------------------
+// LOAD AVATAR IMAGE
+//-----------------------------------------------
+function setupDataBaseAvatar(){
   // user avatar image listen
   conn
     .subscriptionBuilder()
     .subscribe(tables.user_current_avatar);
   // current user avatar image
   conn.db.user_current_avatar.onInsert((ctx, row)=>{
-    console.log(row);
-    // displayAvatar(row.data, row.type);
+    // console.log(row);
+    displayAvatar(row.data, row.type);
+  })
+}
+
+//-----------------------------------------------
+// GROUP CHAT
+//-----------------------------------------------
+
+function delete_group_chat_id(id){
+  conn.reducers.deleteGroupChat({
+    id:id
   })
 }
 
 
-function displayAvatar(bytes, mimeType) {
-  // 1. Create a Blob from the Uint8Array and the stored MIME type
-  const blob = new Blob([bytes], { type: mimeType });
-  
-  // 2. Generate a temporary URL for the browser
-  const imageUrl = URL.createObjectURL(blob);
-  
-  // 3. Set it as an <img> source
-  // document.getElementById('avatarDisplay').src = imageUrl;
-  // avatar_image.src = imageUrl;
-  console.log(imageUrl);
-  userAvatarUrl.val = imageUrl;
+// need to fixed this later? in case of refresh accident delete group chat
+function updateGroupChat(row){
+  const groupChatElId = document.getElementById('group-chat-'+row.id);
+  if(groupChatElId){
+    groupChatElId.remove();
+  }
+  van.add(groupChatEl, div({id:'group-chat-'+row.id},
+    label(" [ "+ row.name + " ] "),
+    button('[ Join ]'),
+    span(' '),
+    button({onclick:()=>delete_group_chat_id(row.id)},'[ Delete ]')
+  ))
 }
 
-function setupDataBaseAvatar(){
-  // user avatar image listen
+function deleteGroupChat(row){
+  const groupChatElId = document.getElementById('group-chat-'+row.id);
+  if(groupChatElId){
+    groupChatElId.remove();
+  }
+}
+
+function setupDBGroupChat(){
   conn
     .subscriptionBuilder()
-      .subscribe(tables.user_current_avatar);
-  // current user avatar image
-  conn.db.user_current_avatar.onInsert((ctx, row)=>{
+    .subscribe(tables.groupChat);
+
+  conn.db.groupChat.onInsert((ctx, row)=>{
+    console.log("Group Chat");
     console.log(row);
-    displayAvatar(row.data, row.type);
+    // displayAvatar(row.data, row.type);
+    updateGroupChat(row)
+  })
+
+  conn.db.groupChat.onDelete((ctx, row)=>{
+    console.log("Delete Group Chat");
+    console.log(row);
+    // displayAvatar(row.data, row.type);
+    deleteGroupChat(row)
   })
 }
 
@@ -178,7 +221,7 @@ function ChatWindow() {
       // console.log(ctx.db)
       // console.log("message row: ", row);
       let side = '';
-      if(row.sender.toHexString() == userIdentity.val.toHexString()){
+      if(row.senderId.toHexString() == userIdentity.val.toHexString()){
         // console.log("FOUND USER???");
         side = "sent";
       }
@@ -269,6 +312,9 @@ function ChatWindow() {
 // 
 //-----------------------------------------------
 function App() {
+
+
+
   return div(
     {
       style: `
@@ -299,10 +345,10 @@ function App() {
           gap: 24px;
         `
       },
-      "≡",  // or home icon, menu icon, etc.
-      "★",
-      "⚙",
-      "⏻"
+      button("≡"),  // or home icon, menu icon, etc.
+      button("★"),
+      button("⚙"),
+      button("⏻")
     ),
 
     // Second sidebar – next to the narrow one
@@ -318,14 +364,29 @@ function App() {
           overflow-y: auto;
         `
       },
-      div({style:"font-weight:bold; margin-bottom:16px;"}, "Second Sidebar"),
-      "Projects",
+      div({style:"font-weight:bold; margin-bottom:16px;"}, "Hub"),
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      "Team",
+      button("Community"),button("+"), 
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      "Messages",
+      button({},"Group Chat"),button({onclick:()=>{
+        van.add(document.body, groupChatCreate());
+      }},"+"),
+      // div("test"),
+      groupChatEl,
+
+
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      "Settings"
+      button("Friend(s)"),
+      button("+"), 
+      button("-"),
+      // div({style:"font-weight:bold; margin-bottom:16px;"}, "Second Sidebar"),
+      // "Projects",
+      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      // "Team",
+      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      // "Messages",
+      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      // "Settings"
     ),
 
     // Main content – takes everything that's left
@@ -375,7 +436,7 @@ function UserPanel() {
   }
 
   const displayName = van.derive(()=>{
-    console.log("userName.val:", userName.val);
+    // console.log("userName.val:", userName.val);
     return userName.val;
   });
 
@@ -469,9 +530,38 @@ function UserPanel() {
 //-----------------------------------------------
 // 
 //-----------------------------------------------
+// testing if network is connected.
+function STDBPanel(){
 
+  return div({
+    style: `
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      width: 280px;
+      height: 60px;
+      background: #2f3136;          /* Discord dark gray */
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      color: #dcddde;
+      font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      user-select: none;
+      z-index: 9999;
+    `
+  },
+  div({ style: "display:flex; flex-direction:column;" },
+    label({style:"font-weight:600;" }, "Network: ", networkStatus)
+  ),
+  // div({ style: "display:flex; gap:12px;" },
+  //   label({style:"" }, " [test] ")
+  // )
 
-
+  )
+}
 
 //-----------------------------------------------
 // Add Body
@@ -481,6 +571,7 @@ const chatWindowEl = ChatWindow();
 van.add(document.body, chatWindowEl);
 // makeDraggable(chatWindowEl);
 van.add(document.body, UserPanel());
+van.add(document.body, STDBPanel());
 
 //-----------------------------------------------
 // Modal
@@ -532,20 +623,16 @@ function editStatusPanel(){
 // van.add(document.body, editStatusPanel());
 
 function editAvatarImagePanel(){
-
   const closed = van.state(false)
   const el_file = input({type:'file'})
-
   async function upload_file(event){
-    console.log(event);
+    // console.log(event);
     const file = el_file.files[0];
-    console.log(file);
-    console.log(file.type);
-
+    // console.log(file);
+    // console.log(file.type);
     const arrayBuffer = await file.arrayBuffer();
     const fileBytes = new Uint8Array(arrayBuffer);
-
-    console.log(arrayBuffer);
+    // console.log(arrayBuffer);
     try {
       conn.reducers.uploadAvatar({
         userId:BigInt(1),
@@ -555,17 +642,40 @@ function editAvatarImagePanel(){
       console.log("pass!");
       closed.val = true;
     } catch (error) {
-      
+      console.log("upload failed!");
     }
   }
 
   return Modal({closed},
-    p("Edit status!"),
+    p("Edit Upload Image 48x48!"),
     div({style: "display: flex; justify-content: center;"},
       el_file,
       button({onclick:upload_file}, "Upload File"),
       button({onclick: () => closed.val = true}, "Cancel"),
     ),
   )
+}
+
+function groupChatCreate(){
+  const closed = van.state(false);
+  const groupName = van.state('');
+
+  function create_group(){
+    console.log("create : ", groupName.val);
+    conn.reducers.createGroupChat({
+      name:groupName.val,
+      content:"None"
+    });
+  }
+
+  return Modal({closed, },
+    p({style:`background-color:black;`},"Name the Group Chat:"),
+    div({style: "display: flex; justify-content: center;background-color:black;"},
+       label('Group Name: '), input({value:groupName.val, oninput:e=>groupName.val=e.target.value}),
+      button({onclick:create_group}, "Create"),
+      button({onclick: () => closed.val = true}, "Cancel"),
+    ),
+  )
+
 }
 // van.add(document.body, editAvatarImagePanel());
