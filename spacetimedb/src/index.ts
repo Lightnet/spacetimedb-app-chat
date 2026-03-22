@@ -2,6 +2,18 @@
 import { ScheduleAt } from 'spacetimedb';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
+
+// Define an enum for status
+// const Status = t.enum('Status', {
+//   Active: t.unit(),
+//   Inactive: t.unit(),
+//   Suspended: t.object('SuspendedInfo', { reason: t.string() }),
+// });
+
+const status = t.enum('Status', ['Online', 'Offline','Idle','Busy']);
+
+// status.default();
+
 //-----------------------------------------------
 // TABLES
 //-----------------------------------------------
@@ -13,8 +25,15 @@ const user = table(
   {
     identity: t.identity().primaryKey(),
     id:t.u64().autoInc(),
-    name: t.string().optional(),
+    name: t.string().optional(), // user name
+    // status: t.enum(['online', 'idle', 'dnd', 'offline']).default('offline'), 
+    status: status,
+    custom_status:t.string().optional(), // current status custom text
+    // bio: t.string().optional(), // user info
+    // title: t.string().optional(), // job or rank or 
     online: t.bool(),
+    accent_color: t.u32().optional(),
+    created_at:   t.timestamp(),
   }
 );
 
@@ -165,9 +184,13 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
   } else {
     ctx.db.user.insert({
       identity: ctx.sender,
-      id:0n,
+      id: 0n,
       name: undefined,
       online: true,
+      status: {tag:"Online"},
+      custom_status: undefined,
+      accent_color: undefined,
+      created_at: ctx.timestamp
     });
   }
 });
@@ -177,7 +200,12 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
 export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
   const user = ctx.db.user.identity.find(ctx.sender);
   if (user) {
-    ctx.db.user.identity.update({ ...user, online: false });
+    ctx.db.user.identity.update({ 
+      ...user, 
+      online: false ,
+      status: {tag:"Offline"},
+    });
+    console.info(`Disconnect event for user with identity ${ctx.sender}`);
   } else {
     console.warn(
       `Disconnect event for unknown user with identity ${ctx.sender}`
@@ -199,20 +227,32 @@ export const set_name = spacetimedb.reducer({ name: t.string() }, (ctx, { name }
   // console.info("Name: ",name);
   validateName(name);
   const user = ctx.db.user.identity.find(ctx.sender);
+  console.log("[server] Set Name:", name);
   if (!user) {
     throw new SenderError('Cannot set name for unknown user');
   }
   ctx.db.user.identity.update({ ...user, name });
 });
 
+export const set_custom_status = spacetimedb.reducer({ text: t.string() }, (ctx, { text }) => {
+  // console.info("Name: ",name);
+  validateName(text);
+  const user = ctx.db.user.identity.find(ctx.sender);
+  console.log("[server] Set Name:", text);
+  if (!user) {
+    throw new SenderError('Cannot set name for unknown custom status');
+  }
+  ctx.db.user.identity.update({ ...user, custom_status:text });
+});
+//-----------------------------------------------
+// SEND MESSAGE
+//-----------------------------------------------
 function validateMessage(text: string) {
   if (!text) {
     throw new SenderError('Messages must not be empty');
   }
 }
-//-----------------------------------------------
-// SEND MESSAGE
-//-----------------------------------------------
+
 export const send_message = spacetimedb.reducer({ text: t.string() }, (ctx, { text }) => {
   validateMessage(text);
   console.info(`User ${ctx.sender}: ${text}`);

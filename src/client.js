@@ -1,5 +1,5 @@
 import { DbConnection, tables } from './module_bindings';
-import { Identity } from 'spacetimedb';
+// import { Identity } from 'spacetimedb';
 import van from "https://cdn.jsdelivr.net/gh/vanjs-org/van/public/van-1.6.0.min.js"
 
 // spacetime sql --server local spacetimedb-app-chat "SELECT * FROM message"
@@ -24,7 +24,6 @@ async function upload_file(event){
     mimeType:file.type,
     data:fileBytes
   });
-
 }
 
 async function counts(){
@@ -41,7 +40,6 @@ async function get_current_avatar(){
   console.log(avatarData);
   displayAvatar(avatarData.data, avatarData.type);
 }
-
 
 const user_avatar = div(
   el_file,
@@ -208,83 +206,80 @@ function App(){
 
   const isEdit = van.state(false);
   const message = van.state('');
-  const text_content = van.state('');
+  // const text_content = van.state('');
   // const isDone = van.state(false);
-  const isDone = van.state(true);
+  // const isDone = van.state(true);
 
-    function test(){
-        console.log("test");
-        console.log(conn.reducers);
-        // conn.reducers.sayHello();
+  function test(){
+      console.log("test");
+      console.log(conn.reducers);
+      // conn.reducers.sayHello();
+  }
+
+  const render_name = van.derive(()=>{
+    if(isEdit.val){
+      return input({value:username,oninput:e=>username.val=e.target.value})
+    }else{
+      return label(username.val)
     }
+  });
 
-    const render_name = van.derive(()=>{
-      if(isEdit.val){
-        return input({value:username,oninput:e=>username.val=e.target.value})
-      }else{
-        return label(username.val)
-      }
-    });
+  // update name
+  function update_name(){
+    console.log("update name");
+    conn.reducers.setName({name:username.val});
+    isEdit.val = false;
+  }
 
-    // update name
-    function update_name(){
-      console.log("update name");
-      conn.reducers.setName({name:username.val})
-      isEdit.val = false;
+  const name_mode =  van.derive(()=>{
+    if(isEdit.val){
+      return button({onclick:update_name},'Update')
+    }else{
+      return button({onclick:()=>isEdit.val=!isEdit.val},'Edit')
     }
+  });
 
-    const name_mode =  van.derive(()=>{
-      if(isEdit.val){
-        return button({onclick:update_name},'Update')
-      }else{
-        return button({onclick:()=>isEdit.val=!isEdit.val},'Edit')
-      }
+  function click_sent(){
+    console.log("message: ", message.val);
+    conn.reducers.sendMessage({
+      text:message.val
     });
+  }
 
-    function click_sent(){
-      console.log("message: ", message.val);
-
+  function typing_message(e){
+    if (e.key === "Enter") {
+      console.log("Input Value:", e.target.value)
+      // Add your logic here
       conn.reducers.sendMessage({
-          text:message.val
-        });
+        text:e.target.value
+      });
     }
+  }
 
-    function typing_message(e){
-      if (e.key === "Enter") {
-        console.log("Input Value:", e.target.value)
-        // Add your logic here
-        conn.reducers.sendMessage({
-          text:e.target.value
-        });
-      }
-    }
+  function setup(){
+    van.add(chat_box, input({value:message,oninput:e=>message.val=e.target.value,onkeydown:e=>typing_message(e)}))
+    van.add(chat_box, button({onclick:click_sent},'Send'))
+    console.log("hello?");
+    get_avatar_id(1);
+  }
 
-    function setup(){
-      van.add(chat_box, input({value:message,oninput:e=>message.val=e.target.value,onkeydown:e=>typing_message(e)}))
-      van.add(chat_box, button({onclick:click_sent},'Send'))
-      console.log("hello?");
-      get_avatar_id(1);
-    }
+  setup();
 
-    setup();
-
-    return div(
-        div(
-          label("Status: "),
-          el_status
-        ),
-        avatar_image,
-        user_avatar,
-
-        div(
-          name_mode,
-          label('Name: '),
-          render_name,
-        ),
-        
-        chat_box,
-        chat_messages,
-    )
+  return div(
+    div(
+      label("Status: "),
+      el_status
+    ),
+    avatar_image,
+    user_avatar,
+    div(
+      name_mode,
+      label('Name: '),
+      render_name,
+    ),
+    chat_box,
+    chat_messages,
+  )
 }
 
 van.add(document.body, App());

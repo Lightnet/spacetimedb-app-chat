@@ -1,4 +1,4 @@
-// 
+// chat ui test build
 // 
 // 
 import { DbConnection, tables } from './module_bindings';
@@ -67,6 +67,19 @@ function setUpDBUser(){
       // console.log("found current ID:", conn.identity.toHexString());
       console.log("Name: ",row.name)
       userName.val = row.name ?? 'Uknown';
+      userStatus.val = row.customStatus ?? 'Idle';
+    }
+  });
+
+
+  conn.db.user.onUpdate((ctx, oldRow, newRow)=>{
+    // console.log('insert user row');
+    // console.log(newRow);
+    if(newRow.identity.toHexString() == conn.identity.toHexString()){
+      // console.log("found current ID:", conn.identity.toHexString());
+      // console.log("Name: ",newRow.name)
+      userName.val = newRow.name ?? 'Uknown';
+      userStatus.val = newRow.customStatus ?? 'Idle';
     }
   });
 
@@ -361,6 +374,11 @@ function UserPanel() {
     van.add(document.body, editAvatarImagePanel());
   }
 
+  const displayName = van.derive(()=>{
+    console.log("userName.val:", userName.val);
+    return userName.val;
+  });
+
   return div(
     {
       style: `
@@ -382,7 +400,6 @@ function UserPanel() {
         z-index: 9999;
       `
     },
-
     // Avatar + name section (left)
     div(
       { style: "display:flex; align-items:center; gap:10px; flex:1;" },
@@ -396,12 +413,11 @@ function UserPanel() {
       }),
       div(
         { style: "display:flex; flex-direction:column;" },
-        label({onclick:()=>editName(),style: "font-weight:600;" }, userName),
+        label({onclick:()=>editName(),style: "font-weight:600;" }, displayName),
         // label({onclick:()=>editStatus(), style: "font-size:12px; color:#b9bbbe;" }, "idle msg")
         label({onclick:()=>editStatus(), style: "font-size:12px; color:#b9bbbe;" }, userStatus)
       )
     ),
-
     // Controls (right) - mic, headset, settings
     div(
       { style: "display:flex; gap:12px;" },
@@ -458,7 +474,7 @@ function UserPanel() {
 
 
 //-----------------------------------------------
-// 
+// Add Body
 //-----------------------------------------------
 van.add(document.body, App());
 const chatWindowEl = ChatWindow();
@@ -466,51 +482,53 @@ van.add(document.body, chatWindowEl);
 // makeDraggable(chatWindowEl);
 van.add(document.body, UserPanel());
 
-
+//-----------------------------------------------
 // Modal
-// const closed = van.state(false)
-// van.add(document.body, Modal({closed},
-//   p("Hello, World!"),
-//   div({style: "display: flex; justify-content: center;"},
-//     button({onclick: () => closed.val = true}, "Ok"),
-//   ),
-// ))
-
+//-----------------------------------------------
 function editUserNamePanel(){
-
   const closed = van.state(false)
   const editUserName = van.state("");
   function applyEditName(){
-
+    try {
+      // console.log("Set Name:", editUserName.val);
+      conn.reducers.setName({name:editUserName.val});
+      closed.val = true;
+    } catch (error) {
+      console.log("edit name error!");
+    }
   }
   return Modal({closed},
     p("Change user name!"),
     div({style: "display: flex; justify-content: center;"},
       input({value:editUserName,oninput:e=>editUserName.val=e.target.value}),
-      button({onclick: () => closed.val = true}, " Okay "),
+      button({onclick: () => applyEditName()}, " Okay "),
       button({onclick: () => closed.val = true}, "Cancel"),
     ),
   )
 }
 
-
 function editStatusPanel(){
-
   const closed = van.state(false)
-  const editUserName = van.state("");
+  const editCustomStatus = van.state("");
   function applyEditName(){
-
+    try {
+      // console.log("Set Name:", editCustomStatus.val);
+      conn.reducers.setCustomStatus({text:editCustomStatus.val});
+      closed.val = true;
+    } catch (error) {
+      console.log("edit name error!");
+    }
   }
+  
   return Modal({closed},
     p("Edit status!"),
     div({style: "display: flex; justify-content: center;"},
-      input({value:editUserName,oninput:e=>editUserName.val=e.target.value}),
-      button({onclick: () => closed.val = true}, " Okay "),
+      input({value:editCustomStatus,oninput:e=>editCustomStatus.val=e.target.value}),
+      button({onclick: () => applyEditName()}, " Okay "),
       button({onclick: () => closed.val = true}, "Cancel"),
     ),
   )
 }
-
 // van.add(document.body, editStatusPanel());
 
 function editAvatarImagePanel(){
@@ -550,5 +568,4 @@ function editAvatarImagePanel(){
     ),
   )
 }
-
 // van.add(document.body, editAvatarImagePanel());
