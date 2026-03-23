@@ -124,7 +124,7 @@ const groupChat = table(
   {
     id:t.u64().primaryKey().autoInc(),
     parentId:t.u64(),
-    senderId: t.identity(),
+    senderId: t.identity().index('btree'),
     name: t.string(),
     content: t.string().optional(),
     status: t.string().optional(),
@@ -136,7 +136,7 @@ const groupMember = table(
   { name: 'group_member', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
-    groupId:t.u64(),
+    groupId:t.u64().index('btree'),
     memberId: t.identity(),
     status: t.string().optional(),
     role: t.string().optional(),
@@ -151,8 +151,8 @@ const groupMessage = table(
   { name: 'group_message', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
-    groupId:t.u64(),
-    senderId: t.identity(),
+    groupId:t.u64().index('btree'),
+    senderId: t.identity().index('btree'),
     content: t.string(),
     createdAt: t.timestamp(),
   }
@@ -165,7 +165,7 @@ const message = table(
   { name: 'message', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
-    senderId: t.identity(),
+    senderId: t.identity().index('btree'),
     content: t.string(),
     createdAt: t.timestamp(),
   }
@@ -177,8 +177,8 @@ const directMessage = table(
   { name: 'direct_message', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
-    senderId: t.identity(),       // who sent it
-    recipientId : t.identity(),   // the other person (in 1:1)
+    senderId: t.identity().index('btree'),       // who sent it
+    recipientId : t.identity().index('btree'),   // the other person (in 1:1)
     content: t.string(),
     status: t.string().optional(),
     readAt: t.timestamp().optional(),
@@ -464,7 +464,18 @@ export const send_direct_message = spacetimedb.reducer(
     readAt:undefined,
     createdAt: ctx.timestamp,
   });
+});
 
+// get direct message
+// need to be private not public
+export const my_direct_message = spacetimedb.view(
+  {name:'my_direct_message', public:true },
+  t.array(directMessage.rowType),
+  (ctx) => {
+    const received = Array.from(
+      ctx.db.directMessage.recipientId.filter(ctx.sender)
+    )
+    return received;
 });
 
 //-----------------------------------------------
@@ -510,15 +521,36 @@ export const delete_group_chat = spacetimedb.reducer(
   ctx.db.groupChat.id.delete(id);
 
   //look for groupid to delete members.
-  for (const member of ctx.db.groupMember.iter()){
-    if (member.groupId == id){
+  for (const member of ctx.db.groupMember.groupId.filter(id)){
+    // if (member.groupId == id){
       ctx.db.groupMember.delete(member);
-    }
+    // }
   }
 });
 
 // need to delete group chat messages
 
+
+
+// group chat id message
+export const send_group_chat_message = spacetimedb.reducer(
+  {id:t.u64(), content:t.string() },
+  (ctx, { id, content }) => {
+  console.info(`ctx.sender: ${ctx.sender}  Group Chat Id: ${id}`);
+
+  const _groupChat = ctx.db.groupChat.id.find(id);
+
+  if(_groupChat){
+    ctx.db.groupMessage.insert({
+      id: 0n,
+      senderId: ctx.sender,
+      content: content,
+      createdAt: ctx.timestamp,
+      groupId: id
+    });
+  }
+
+});
 
 
 

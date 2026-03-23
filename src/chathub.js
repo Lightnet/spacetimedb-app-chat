@@ -51,6 +51,8 @@ function initDB(){
   setUpDBUser();
   setupDataBaseAvatar();
   setupDBGroupChat();
+
+  test_db();
 }
 
 function setUpDBUser(){
@@ -131,7 +133,7 @@ function updateGroupChat(row){
   }
   van.add(groupChatEl, div({id:'group-chat-'+row.id},
     label(" [ "+ row.name + " ] "),
-    button('[ Join ]'),
+    button({onclick:()=>setupChatPanel(row.id)},'[ Join ]'),
     span(' '),
     button({onclick:()=>delete_group_chat_id(row.id)},'[ Delete ]')
   ))
@@ -678,4 +680,73 @@ function groupChatCreate(){
   )
 
 }
+
+function groupChatPanel(id){
+  const closed = van.state(false);
+  const groupChatId = van.state(id);
+  const message = van.state('');
+
+  function send_msg(){
+    console.log(groupChatId.val);
+    conn.reducers.sendGroupChatMessage({
+      id:id,
+      content:message.val
+    });
+  }
+
+  return Modal({closed, id:id },
+    p({style:`background-color:black;`},"Name the Group Chat:"),
+    div({style: "display: flex; justify-content: center;background-color:black;"},
+       label('Message: '), input({value:message.val, oninput:e=>message.val=e.target.value}),
+      button({onclick:send_msg}, "Send"),
+      button({onclick: () => closed.val = true}, "Cancel"),
+    ),
+  )
+
+}
+
+function setupChatPanel(id){
+  // groupChatPanel
+  van.add(document.body, groupChatPanel(id));
+}
+
+
+
 // van.add(document.body, editAvatarImagePanel());
+
+/*
+conn.subscriptionBuilder().subscribe(
+ tables.user.where(r => r.online.eq(true))
+);
+*/
+
+
+// https://spacetimedb.com/docs/clients/typescript/
+// tables.groupMessage.groupId
+// console.log(tables.groupMessage);
+// console.log(tables.groupMessage.where(r=>r.groupId.eq(id)))
+
+function test_db(){
+  const groupMsgSub = conn
+    .subscriptionBuilder()
+    .onApplied((ctx)=>{
+      console.log("hello filter?")
+
+      ctx.db.groupMessage.onInsert((_ctx, row)=>{
+        console.log("groupMessage row", row);
+      });
+    })
+    .onError((ctx, error) => {
+      console.error(`Subscription failed: ${error}`);
+    })
+    .subscribe(tables.groupMessage);
+
+  // console.log(groupMsgSub);
+  // console.log(groupMsgSub.db.groupMessage);
+
+  // console.log(groupMsgSub.db.groupMessage);
+
+  // groupMsgSub.db.groupMessage.onInsert((ctx, row)=>{
+  //   console.log("groupMessage row", row);
+  // })
+}
