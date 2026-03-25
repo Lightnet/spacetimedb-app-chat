@@ -1,6 +1,11 @@
 // server api module
 import { ScheduleAt } from 'spacetimedb';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
+import { customAlphabet } from 'nanoid';
+
+// Define your helper
+const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const generateShortId = customAlphabet(alphabet, 12); // Default length of 12
 
 // Define an enum for status
 // const Status = t.enum('Status', {
@@ -131,9 +136,20 @@ const groupChat = table(
     createdAt: t.timestamp(),
   }
 );
+// group chat config for set and get current group chat
+const groupChatConfig = table(
+  { name: 'group_chat_config', public: true },
+  {
+    identity:t.identity().primaryKey(),
+    groupChatId: t.u64(),
+    status: t.string().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+
 // list member to talk group.
-const groupMember = table(
-  { name: 'group_member', public: true },
+const groupChatMember = table(
+  { name: 'group_chat_member', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     groupId:t.u64().index('btree'),
@@ -143,12 +159,11 @@ const groupMember = table(
     createdAt: t.timestamp(),
   }
 );
-
 //-----------------------------------------------
 // Group Message
 //-----------------------------------------------
-const groupMessage = table(
-  { name: 'group_message', public: true },
+const groupChatMessage = table(
+  { name: 'group_chat_message', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     groupId:t.u64().index('btree'),
@@ -186,6 +201,20 @@ const directMessage = table(
   }
 );
 
+const directMessageConfig = table(
+  { name: 'direct_message_config', public: true },
+  {
+    identity:t.identity().primaryKey(),
+    senderId:t.identity().optional(), // from user
+    userName:t.string().optional(),
+    // isSingle:t.bool().default(true),// view message from one or many messages to filter.
+    // isBlock:t.bool().default(false),
+    // status: t.string().optional(),
+    // readAt: t.timestamp().optional(),
+    createdAt: t.timestamp(),
+  }
+);
+
 //-----------------------------------------------
 // 
 //-----------------------------------------------
@@ -214,8 +243,6 @@ const BoardTopic = table(
   }
 );
 
-
-
 //-----------------------------------------------
 // SPACETIME SCHEMA
 //-----------------------------------------------
@@ -223,10 +250,15 @@ const spacetimedb = schema({
   user,
   userAvatar,
   message,
+  //=============================================
   directMessage,
+  directMessageConfig,
+  //=============================================
   groupChat,
-  groupMember,
-  groupMessage,
+  groupChatConfig,
+  groupChatMember,
+  groupChatMessage,
+  //=============================================
   textChannel,
   textChannelMember,
   textChannelMessage
@@ -475,7 +507,7 @@ export const my_direct_message = spacetimedb.view(
     const received = Array.from(
       ctx.db.directMessage.recipientId.filter(ctx.sender)
     )
-    return received;
+    return received ?? [];
 });
 
 //-----------------------------------------------
@@ -501,7 +533,7 @@ export const create_group_chat = spacetimedb.reducer(
   console.log("group:", group);
 
   if(group){
-    ctx.db.groupMember.insert({
+    ctx.db.groupChatMember.insert({
       status: undefined,
       id: 0n,
       createdAt: ctx.timestamp,
@@ -521,16 +553,14 @@ export const delete_group_chat = spacetimedb.reducer(
   ctx.db.groupChat.id.delete(id);
 
   //look for groupid to delete members.
-  for (const member of ctx.db.groupMember.groupId.filter(id)){
+  for (const member of ctx.db.groupChatMember.groupId.filter(id)){
     // if (member.groupId == id){
-      ctx.db.groupMember.delete(member);
+      ctx.db.groupChatMember.delete(member);
     // }
   }
 });
 
 // need to delete group chat messages
-
-
 
 // group chat id message
 export const send_group_chat_message = spacetimedb.reducer(
@@ -541,7 +571,7 @@ export const send_group_chat_message = spacetimedb.reducer(
   const _groupChat = ctx.db.groupChat.id.find(id);
 
   if(_groupChat){
-    ctx.db.groupMessage.insert({
+    ctx.db.groupChatMessage.insert({
       id: 0n,
       senderId: ctx.sender,
       content: content,
@@ -549,10 +579,22 @@ export const send_group_chat_message = spacetimedb.reducer(
       groupId: id
     });
   }
-
+  
 });
-
-
+// get user id that current group chat messages.
+export const current_group_chat_messages = spacetimedb.view(
+  { name: 'current_group_chat_messages', public: true },
+  t.array(groupChatMessage.rowType), 
+  (ctx) => {
+    //check current user config
+    const _groupConfig = ctx.db.groupChatConfig.identity.find(ctx.sender);
+    if(_groupConfig){
+      //return group chat message to filter by group chat id.
+      return Array.from(ctx.db.groupChatMessage.groupId.filter(_groupConfig.groupChatId));
+    }
+    return [];
+  }
+);
 
 //-----------------------------------------------
 // EXPORT DATABASE

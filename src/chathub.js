@@ -29,7 +29,7 @@ const conn = DbConnection.builder()
   .onConnect((conn, identity, token) => {
     networkStatus.val = 'Connected';
     // console.log("identity: ", identity);
-    console.log("identity: ", identity.toHexString());
+    // console.log("identity: ", identity.toHexString());
     // console.log("conn: ", conn);
     // filter from table update calls...
     userIdentity.val = identity;
@@ -117,14 +117,11 @@ function setupDataBaseAvatar(){
 //-----------------------------------------------
 // GROUP CHAT
 //-----------------------------------------------
-
 function delete_group_chat_id(id){
   conn.reducers.deleteGroupChat({
     id:id
   })
 }
-
-
 // need to fixed this later? in case of refresh accident delete group chat
 function updateGroupChat(row){
   const groupChatElId = document.getElementById('group-chat-'+row.id);
@@ -164,7 +161,22 @@ function setupDBGroupChat(){
     // displayAvatar(row.data, row.type);
     deleteGroupChat(row)
   })
-}
+
+  // const groupMsgSub = conn
+  //   .subscriptionBuilder()
+  //   .onApplied((ctx)=>{
+  //     console.log("hello filter?")
+  //     ctx.db.groupChatMessage.onInsert((_ctx, row)=>{
+  //       console.log("groupMessage row", row);
+  //     });
+  //   })
+  //   .onError((ctx, error) => {
+  //     console.error(`Subscription failed: ${error}`);
+  //   })
+  //   .subscribe(tables.groupChatMessage);
+  }
+
+
 
 //-----------------------------------------------
 // 
@@ -179,33 +191,19 @@ const Message = ({side, name, text}) => div(
 //-----------------------------------------------
 function ChatWindow() {
   const messageInput = van.state("");
-
   const messages = van.state([
     // { side: "received", name: "Steam", text: "Welcome to the black edition chatroom." },
     // { side: "sent",     name: "You",   text: "yo, any drops today?" },
     // { side: "received", name: "Steam", text: "Soon™" },
   ]);
-
   function sendMessage() {
     const text = messageInput.val.trim();
     if (!text) return;
-
     // messages.val = [...messages.val, { side: "sent", name: "You", text }];
     messageInput.val = "";
-
     conn.reducers.sendMessage({
       text:text
     });
-
-
-    // Fake reply
-    // setTimeout(() => {
-    //   const replies = ["Waiting...", "Soon™", "Check your inventory", "Working on it", "Nice", "..."];
-    //   messages.val = [
-    //     ...messages.val,
-    //     { side: "received", name: "Steam", text: replies[Math.floor(Math.random() * replies.length)] }
-    //   ];
-    // }, 600 + Math.random() * 1400);
   }
 
   function setUpConnChat(){
@@ -227,7 +225,6 @@ function ChatWindow() {
         // console.log("FOUND USER???");
         side = "sent";
       }
-
       messages.val = [...messages.val, { side: side, name: "You", text:row.text }];
     });
   }
@@ -307,15 +304,154 @@ function ChatWindow() {
   });
 
   setUpConnChat();
-
   return windowEl;
 }
+
+function groupChatWindow(groupId){
+  const closed = van.state(false);
+  const messageInput = van.state("");
+  const messages = van.state([]);
+  let groupMsgSub = null;
+
+  function sendMessage() {
+    const text = messageInput.val.trim();
+    if (!text) return;
+    // messages.val = [...messages.val, { side: "sent", name: "You", text }];
+    messageInput.val = "";
+    // conn.reducers.sendMessage({
+    //   text:text
+    // });
+    console.log("groupId: ", groupId);
+    conn.reducers.sendGroupChatMessage({
+      id:groupId,
+      content:text
+    });
+  }
+
+  function setUpConnChat(){
+    groupMsgSub = conn
+      .subscriptionBuilder()
+      .onApplied((ctx)=>{
+        ctx.db.groupChatMessage.onInsert((ctx, row)=>{
+          let side = '';
+          console.log("group msg...");
+          if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+            // console.log("FOUND USER???");
+            side = "sent";
+          }
+          messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+        });
+      })
+      .onError((ctx, error) => {
+        console.error(`Subscription failed: ${error}`);
+      })
+      .subscribe(tables.groupChatMessage);
+
+    // get message
+    // conn.db.groupChatMessage.onInsert((ctx, row)=>{
+    //   let side = '';
+    //   if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+    //     // console.log("FOUND USER???");
+    //     side = "sent";
+    //   }
+    //   messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+    // });
+  }
+
+  function onKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  //scroll
+  van.derive(()=>{
+    messages.val;
+    setTimeout(()=>{
+      const container = document.getElementById(groupId);
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      }
+    },50);
+  });
+
+  van.derive(()=>{
+    console.log("group chat closed: ", closed.val);
+    if(closed.val == true){
+      console.log(groupMsgSub);
+      if(groupMsgSub.isActive){
+        groupMsgSub.unsubscribe();
+      }
+    }
+  })
+
+  // watch change to update render
+  const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
+
+  // Create the window element
+  const windowEl = div({class: "window"},
+    div({class: "titlebar"},
+      div({class: "title"}, "Black Chat — Public"),
+      div({class: "titlebar-controls"},
+        button("_"),
+        button("□"),
+        button({onclick:()=>closed.val=true ,class: "close"}, "×"),
+      )
+    ),
+
+    div({id:groupId,class: "chat-messages"},
+      messageElements
+    ),
+
+    div({class: "input-area"},
+      textarea({
+        class: "message-input",
+        value: messageInput,
+        oninput: e => messageInput.val = e.target.value,
+        onkeydown: onKeyDown,
+        placeholder: "Type a message…",
+        rows: "1",
+        autofocus: true,
+      }),
+      button({class: "send-btn", onclick: sendMessage}, "Send")
+    )
+  );
+
+  // Make it draggable
+  windowEl.addEventListener("mousedown", (e) => {
+    if (!e.target.closest(".titlebar")) return;
+    if (e.target.closest("button")) return;
+
+    const win = e.currentTarget;
+    let shiftX = e.clientX - win.getBoundingClientRect().left;
+    let shiftY = e.clientY - win.getBoundingClientRect().top;
+
+    function moveAt(pageX, pageY) {
+      win.style.left = pageX - shiftX + "px";
+      win.style.top  = pageY - shiftY + "px";
+    }
+
+    function onMouseMove(e) {
+      moveAt(e.clientX, e.clientY);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", () => {
+      document.removeEventListener("mousemove", onMouseMove);
+    }, {once: true});
+  });
+
+  setUpConnChat();
+  return ()=> closed.val ? null : windowEl;
+}
+
+
+
 //-----------------------------------------------
 // 
 //-----------------------------------------------
 function App() {
-
-
 
   return div(
     {
@@ -347,10 +483,10 @@ function App() {
           gap: 24px;
         `
       },
-      button("≡"),  // or home icon, menu icon, etc.
-      button("★"),
-      button("⚙"),
-      button("⏻")
+      // button("≡"),  // or home icon, menu icon, etc.
+      // button("★"),
+      // button("⚙"),
+      // button("⏻")
     ),
 
     // Second sidebar – next to the narrow one
@@ -367,8 +503,8 @@ function App() {
         `
       },
       div({style:"font-weight:bold; margin-bottom:16px;"}, "Hub"),
-      div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      button("Community"),button("+"), 
+      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      // button("Community"),button("+"), 
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       button({},"Group Chat"),button({onclick:()=>{
         van.add(document.body, groupChatCreate());
@@ -376,11 +512,11 @@ function App() {
       // div("test"),
       groupChatEl,
 
+      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      // button("Friend(s)"),
+      // button("+"), 
+      // button("-"),
 
-      div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      button("Friend(s)"),
-      button("+"), 
-      button("-"),
       // div({style:"font-weight:bold; margin-bottom:16px;"}, "Second Sidebar"),
       // "Projects",
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
@@ -707,10 +843,10 @@ function groupChatPanel(id){
 
 function setupChatPanel(id){
   // groupChatPanel
-  van.add(document.body, groupChatPanel(id));
+  // van.add(document.body, groupChatPanel(id));
+
+  van.add(document.body, groupChatWindow(id));
 }
-
-
 
 // van.add(document.body, editAvatarImagePanel());
 
@@ -727,26 +863,5 @@ conn.subscriptionBuilder().subscribe(
 // console.log(tables.groupMessage.where(r=>r.groupId.eq(id)))
 
 function test_db(){
-  const groupMsgSub = conn
-    .subscriptionBuilder()
-    .onApplied((ctx)=>{
-      console.log("hello filter?")
 
-      ctx.db.groupMessage.onInsert((_ctx, row)=>{
-        console.log("groupMessage row", row);
-      });
-    })
-    .onError((ctx, error) => {
-      console.error(`Subscription failed: ${error}`);
-    })
-    .subscribe(tables.groupMessage);
-
-  // console.log(groupMsgSub);
-  // console.log(groupMsgSub.db.groupMessage);
-
-  // console.log(groupMsgSub.db.groupMessage);
-
-  // groupMsgSub.db.groupMessage.onInsert((ctx, row)=>{
-  //   console.log("groupMessage row", row);
-  // })
 }

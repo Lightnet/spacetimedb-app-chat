@@ -11,8 +11,10 @@
     "spacetime:publish": "spacetime publish --module-path spacetimedb --server maincloud"
   },
   "dependencies": {
+    "nanoid": "^5.1.7",
     "spacetimedb": "^2.0.4",
-    "three": "^0.183.2"
+    "vanjs-core": "^1.6.0",
+    "vanjs-ui": "^0.11.14"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
