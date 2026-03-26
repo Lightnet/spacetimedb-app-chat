@@ -52,18 +52,118 @@
   Server group is list of text channel. ( wip )
 
 # Group chat filter:
-  After learning how to filter some group message id. There are limited how to handle different group. There are pros and cons.
-
-  There are couple of ways. One client side filter and server side filter. The SpaceTimeDB has View features.
-
-  For client side it has problem as it expose public to other group chat list that anyone can view messages. But it can filter out groupChatId.
-
-  On the server side can filter but support one view at the time. But required if there many groups that join other groups. Not found correct way to handle multiples groups to filter out messages.
-
-  Note required some logics on how code filter.
+  There are differen ways to handle group chat. The SpaceTimeDB has view and anonymousView features. As well there are pros and cons.
 
   https://spacetimedb.com/docs/functions/views
 
+## client side:
+  It has it pros and cons. It can easy expose the public messages from other chat groups. Reason it open to query easy.
+### method 1
+```js
+  const closed = van.state(false);
+  const messages = van.state([]);
+  let groupMsgSub = null;
+  //...
+  function setUpConnChat(){
+    //create subscription to unsubscribe.
+    conn.reducers.setGroupChatId({id:groupId});
+    groupMsgSub = conn
+      .subscriptionBuilder()
+      .onApplied((ctx)=>{
+        ctx.db.current_group_chat_messages.onInsert((ctx, row)=>{
+          let side = '';
+          console.log("group msg...");
+          if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+            // console.log("FOUND USER???");
+            side = "sent";
+          }
+          messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+        });
+      })
+      .onError((ctx, error) => {
+        console.error(`Subscription failed: ${error}`);
+      })
+      // .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
+      .subscribe(tables.current_group_chat_messages);
+  }
+  //...
+  // This will handle the table to unsubscribe. To stop listen table.
+  van.derive(()=>{
+    console.log("group chat closed: ", closed.val);
+    if(closed.val == true){
+      console.log(groupMsgSub);
+      if(groupMsgSub.isActive){
+        groupMsgSub.unsubscribe();
+      }
+    }
+  })
+```
+
+## Server side:
+  It same but required more load but reduce bandwidth sending the message data to filter out.
+### method 1
+```js
+export const set_group_chat_id = spacetimedb.reducer(
+  { id:t.u64() },
+  (ctx, { id }) => {
+    console.info(`ctx.sender: ${ctx.sender}  Group Chat Id: ${id}`);
+    const config = ctx.db.groupChatConfig.identity.find(ctx.sender);
+
+    if(config){
+      config.groupChatId = id;
+      ctx.db.groupChatConfig.identity.update(config);
+    }else{
+      ctx.db.groupChatConfig.insert({
+        status: undefined,
+        identity: ctx.sender,
+        createdAt: ctx.timestamp,
+        groupChatId: id
+      })
+    }
+  }
+);
+
+// get user id that current group chat messages.
+export const current_group_chat_messages = spacetimedb.view(
+  { name: 'current_group_chat_messages', public: true },
+  t.array(groupChatMessage.rowType), 
+  (ctx) => {
+    //check current user config
+    const _groupConfig = ctx.db.groupChatConfig.identity.find(ctx.sender);
+    if(_groupConfig){
+      //return group chat message to filter by group chat id.
+      return Array.from(ctx.db.groupChatMessage.groupId.filter(_groupConfig.groupChatId));
+    }
+    return [];
+  }
+);
+```
+### method 2
+```ts
+export const all_group_chat_messages = spacetimedb.view(
+  { name: 'all_group_chat_messages', public: true },
+  t.array(groupChatMessage.rowType), 
+  (ctx) => {
+
+    // ctx.sender = user id.
+    const groupChatlist = ctx.db.groupChatMember.memberId.filter(ctx.sender);
+
+    const allowedGroupIds = new Set(
+      Array.from(groupChatlist).map(m => m.groupId)
+    );
+
+    if (allowedGroupIds.size === 0) {
+      return []; // User is not in any groups
+    }
+    // Get ALL messages and filter to only those in the user's groups
+    const allMessages = ctx.db.groupChatMessage.iter(); // or .filter if you had a range, but here we need multiple values
+
+    return Array.from(allMessages).filter(msg => 
+      allowedGroupIds.has(msg.groupId)
+    );
+    // return []
+  })
+```
 
 # SpaceTimeDB Information:
 
@@ -98,7 +198,28 @@
 ```
 
 # SpaceTimeDB view:
+- https://spacetimedb.com/docs/functions/views
 - The view is read only when filter query.
+- 
+
+
+# SpaceTimeDB anonymousView:
+- There is restrict but required public. Mean everyone can view the data in public.
+- Note that ctx.sender id can't be use here. Only the db and from can be use here.
+- Here for note reminder.
+```ts
+export const high_scorers = spacetimedb.anonymousView(
+  { name: 'high_scorers', public: true },
+  t.array(players.rowType),
+  (ctx) => {
+    return ctx.from.players
+      .where(p => p.score.gte(1000n))
+      .where(p => p.name.ne('BOT'));
+  }
+);
+```
+
+
 
 ## server module:
 ```js
@@ -191,3 +312,7 @@ spacetime sql --server local spacetime-app-chat "SELECT * FROM user_avatar"
 # Refs:
 - https://spacetimedb.com/docs/functions/views
 - https://spacetimedb.com/docs/functions/procedures
+
+# Bugs:
+- subscriptionBuilder
+  - unsubscribe does not clear previsit listen. It over laps.

@@ -165,15 +165,15 @@ function setupDBGroupChat(){
   // const groupMsgSub = conn
   //   .subscriptionBuilder()
   //   .onApplied((ctx)=>{
-  //     console.log("hello filter?")
-  //     ctx.db.groupChatMessage.onInsert((_ctx, row)=>{
-  //       console.log("groupMessage row", row);
-  //     });
+  //     console.log("my_group_chat_messages filter?")
+  //     // ctx.db.groupChatMessage.onInsert((_ctx, row)=>{
+  //     //   console.log("groupMessage row", row);
+  //     // });
   //   })
   //   .onError((ctx, error) => {
   //     console.error(`Subscription failed: ${error}`);
   //   })
-  //   .subscribe(tables.groupChatMessage);
+  //   .subscribe(tables.my_group_chat_messages);
 }
 
 //-----------------------------------------------
@@ -251,9 +251,17 @@ function ChatWindow() {
     console.log("group chat closed: ", closed.val);
     if(closed.val == true){
       console.log(messageSub);
-      if(messageSub.isActive){
+      if(messageSub != null){
+      // if(messageSub.isActive){
         // subscription remove table listen
-        messageSub.unsubscribe();
+        // messageSub.unsubscribe();
+        messageSub.unsubscribeThen((e)=>{
+          console.log(e);
+        });
+        // messageSub = null;
+        console.log(messageSub);
+        console.log("unsubscribe");
+        console.log(conn);
       }
     }
   })
@@ -363,16 +371,6 @@ function groupChatWindow(groupId, name){
       })
       // .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
       .subscribe(tables.current_group_chat_messages);
-
-    // get message
-    // conn.db.groupChatMessage.onInsert((ctx, row)=>{
-    //   let side = '';
-    //   if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-    //     // console.log("FOUND USER???");
-    //     side = "sent";
-    //   }
-    //   messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
-    // });
   }
 
   function onKeyDown(e) {

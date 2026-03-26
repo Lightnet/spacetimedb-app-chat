@@ -1,7 +1,21 @@
 // server api module
-import { ScheduleAt } from 'spacetimedb';
+// import { ScheduleAt } from 'spacetimedb';
+// import { Range } from 'spacetimedb/server';
+// import * as TestDB from 'spacetimedb/server';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 import { customAlphabet } from 'nanoid';
+
+function getAllMethods(obj: any): string[] {
+  // Use Object.getOwnPropertyNames to get all property names (including non-enumerable ones, if necessary)
+  return Object.getOwnPropertyNames(obj).filter(function (prop) {
+    // Check if the property value is of type 'function'
+    return typeof obj[prop] === 'function';
+  });
+}
+// const methods = getAllMethods(TestDB);
+// console.log(TestDB);
+// console.log(methods);
+
 
 // Define your helper
 const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -153,7 +167,7 @@ const groupChatMember = table(
   {
     id:t.u64().primaryKey().autoInc(),
     groupId:t.u64().index('btree'),
-    memberId: t.identity(),
+    memberId: t.identity().index('btree'),
     status: t.string().optional(),
     role: t.string().optional(),
     createdAt: t.timestamp(),
@@ -618,6 +632,82 @@ export const current_group_chat_messages = spacetimedb.view(
       return Array.from(ctx.db.groupChatMessage.groupId.filter(_groupConfig.groupChatId));
     }
     return [];
+  }
+);
+
+//view all public test
+export const public_test =  spacetimedb.anonymousView(
+  { name: 'public_test', public: true },
+   t.array(groupChatMessage.rowType),
+  (ctx) => {
+    // ctx.sender; // does not exist
+    return ctx.from.groupChatMessage
+      .leftSemijoin(ctx.from.groupChatMember, (g,m)=>g.groupId.eq(m.groupId));
+  });
+
+// user group config set groupChatId to filter.
+export const my_group_chat_messages = spacetimedb.view(
+  { name: 'my_group_chat_messages', public: true },
+  t.array(groupChatMessage.rowType), 
+  (ctx) => {
+    //check current user config
+    const _groupConfig = ctx.db.groupChatConfig.identity.find(ctx.sender);
+    if(_groupConfig){
+      //return group chat message to filter by group chat id.
+      return Array.from(ctx.db.groupChatMessage.groupId.filter(_groupConfig.groupChatId));
+      // return Array.from(ctx.from.groupChatMessage.where(r=>r.groupId.eq(_groupConfig.groupChatId)));
+      // return ctx.from.groupChatMessage.where(r=>r.groupId.eq(_groupConfig.groupChatId));
+      // return Array.from(ctx.from.groupChatMessage.where(r=>r.groupId.eq(_groupConfig.groupChatId)));
+    }
+    return [];
+  }
+);
+
+// testing...
+// this view all messages current own user groups
+export const all_group_chat_messages = spacetimedb.view(
+  { name: 'all_group_chat_messages', public: true },
+  t.array(groupChatMessage.rowType), 
+  (ctx) => {
+
+    // ctx.sender = user id.
+    const groupChatlist = ctx.db.groupChatMember.memberId.filter(ctx.sender);
+
+    const allowedGroupIds = new Set(
+      Array.from(groupChatlist).map(m => m.groupId)
+    );
+
+    if (allowedGroupIds.size === 0) {
+      return []; // User is not in any groups
+    }
+    // Get ALL messages and filter to only those in the user's groups
+    const allMessages = ctx.db.groupChatMessage.iter(); // or .filter if you had a range, but here we need multiple values
+
+    return Array.from(allMessages).filter(msg => 
+      allowedGroupIds.has(msg.groupId)
+    );
+    // return []
+  })
+
+export const group_test = spacetimedb.reducer(
+  {  },
+  (ctx, {  }) => {
+    console.log("test");
+    
+
+    // console.info(`ctx.sender: ${ctx.sender}  Group Chat Id: ${id}`);
+    // const config = ctx.db.groupChatConfig.identity.find(ctx.sender);
+    // if(config){
+    //   config.groupChatId = id;
+    //   ctx.db.groupChatConfig.identity.update(config);
+    // }else{
+    //   ctx.db.groupChatConfig.insert({
+    //     status: undefined,
+    //     identity: ctx.sender,
+    //     createdAt: ctx.timestamp,
+    //     groupChatId: id
+    //   })
+    // }
   }
 );
 
