@@ -316,3 +316,6 @@ spacetime sql --server local spacetime-app-chat "SELECT * FROM user_avatar"
 # Bugs:
 - subscriptionBuilder
   - unsubscribe does not clear previsit listen. It over laps.
+- nanoid required crypto which is not defined.
+- math random is not defined.
+- ctx.random() use by SpaceTimeDB.

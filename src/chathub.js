@@ -51,8 +51,7 @@ function initDB(){
   setUpDBUser();
   setupDataBaseAvatar();
   setupDBGroupChat();
-
-  test_db();
+  // test_db();
 }
 
 function setUpDBUser(){
@@ -461,8 +460,6 @@ function groupChatWindow(groupId, name){
   return ()=> closed.val ? null : windowEl;
 }
 
-
-
 //-----------------------------------------------
 // 
 //-----------------------------------------------
@@ -761,6 +758,7 @@ function editStatusPanel(){
   function applyEditName(){
     try {
       // console.log("Set Name:", editCustomStatus.val);
+      console.log(conn.reducers);
       conn.reducers.setCustomStatus({text:editCustomStatus.val});
       closed.val = true;
     } catch (error) {
@@ -862,18 +860,14 @@ function groupChatPanel(id){
 
 function setupChatPanel(id, name){
   // groupChatPanel
-  // van.add(document.body, groupChatPanel(id));
-
   van.add(document.body, groupChatWindow(id, name));
 }
 
 // van.add(document.body, editAvatarImagePanel());
 
-/*
-conn.subscriptionBuilder().subscribe(
- tables.user.where(r => r.online.eq(true))
-);
-*/
+// conn.subscriptionBuilder().subscribe(
+//  tables.user.where(r => r.online.eq(true))
+// );
 
 
 // https://spacetimedb.com/docs/clients/typescript/
