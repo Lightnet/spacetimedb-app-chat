@@ -2,6 +2,11 @@
 
 # Licence: MIT
 
+# status:
+- prototyping
+- in development
+- not ready for production.
+
 # SpaceTimeDB:
 - spacetimedb binary 2.0.5
 
@@ -19,25 +24,58 @@
   - edit status
   - edit bio
 - message (simple message)
-- direct message ( n/a )
-- simple chat ui 
-- group chat
-
+- direct message ( wip )
+- simple chat ui ( wip )
+- group chat ( wip )
+  - group name
+  - group member
+  - group message
+- notifications
+ - friend online / offline
+ - new message ?
+ - dm message ?
+ - report alert ?
+ - update information
+ - server boardcast message
 
 # Project files:
 - index.html
 - chathub.html
 
 # Information:
-  Work in progress. Simple chat test.
+  The project is to test chat messages. As well some vary types. Like direct message, group chat and server group.
 
-  SpaceTimeDB is all one database and server module for typescript. Read more on SpaceTimeDB. It use the web socket and module api from SpaceTimeDB cli command export and import module for server and client plugins design. By default use token ID generate from SpaceTimeDB and no ip tracking. It is anonymous by default just normal browser access vist the sites.
+  Direct message is chat between two users. ( wip )
 
-  As for ip address might due to Web Assembly in case of bad actors as they can create fake ip address. SpaceTimeDB base on OpenID Connect protocol. Basiclly identity aka token id is create when enter the door as client. Which needed a firewall proxy or third party applications to handle ip tracking for ban or blocking in case of spam and other things. Another way is third party auth application to handle access.
+  Group chat is create group that not part of the server group which can be delete. ( wip )
 
+  Server group is list of text channel. ( wip )
+
+# Group chat filter:
+  After learning how to filter some group message id. There are limited how to handle different group. There are pros and cons.
+
+  There are couple of ways. One client side filter and server side filter. The SpaceTimeDB has View features.
+
+  For client side it has problem as it expose public to other group chat list that anyone can view messages. But it can filter out groupChatId.
+
+  On the server side can filter but support one view at the time. But required if there many groups that join other groups. Not found correct way to handle multiples groups to filter out messages.
+
+  Note required some logics on how code filter.
+
+  https://spacetimedb.com/docs/functions/views
+
+
+# SpaceTimeDB Information:
+
+  SpaceTimeDB is all one database and server module for typescript as Web Assembly as plugin add on to the database. Read more on SpaceTimeDB. It use the web socket and module api from SpaceTimeDB for simple chat message application.  
+
+  SpaceTimeDB base on OpenID Connect protocol. They treat identity as client. SpacetimeDB does not track ip address but create string token by default if wish to use same identity. It is anonymous by default just normal browser access vist the site.
+
+  There are third party applications and packages that handle authentication can be read in docs. 
+  
   https://spacetimedb.com/blog/who-are-you
-
-  The only way is the dev way to handle the filter of the ip and auth in their own ways. For this project to test SpaceTimeDB to handle chat messages.
+  
+  Which required developer code to handle how SpaceTimeDB to authentication who the user is. As for the ip address tracking for ban or blocking in case of spam and other things. I have not gone into depth for tools or apps to handle security and ip address logging to ban or block. It vary in the hosting servcies.
 
 # SpaceTimeDB Diagram:
 

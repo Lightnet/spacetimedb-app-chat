@@ -207,8 +207,9 @@ function ChatWindow() {
       text:text
     });
   }
-
+// https://spacetimedb.com/docs/clients/subscriptions/
   function setUpConnChat(){
+    //create subscription
     messageSub = conn
       .subscriptionBuilder()
       .onApplied((ctx)=>{
@@ -226,20 +227,6 @@ function ChatWindow() {
         console.error(`Subscription failed: ${error}`);
       })
       .subscribe(tables.message);
-
-    // get message
-    // conn.db.message.onInsert((ctx, row)=>{
-    //   // console.log(ctx)
-    //   // console.log(ctx.identity)
-    //   // console.log(ctx.db)
-    //   // console.log("message row: ", row);
-    //   let side = '';
-    //   if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-    //     // console.log("FOUND USER???");
-    //     side = "sent";
-    //   }
-    //   messages.val = [...messages.val, { side: side, name: "You", text:row.text }];
-    // });
   }
 
   function onKeyDown(e) {
@@ -265,6 +252,7 @@ function ChatWindow() {
     if(closed.val == true){
       console.log(messageSub);
       if(messageSub.isActive){
+        // subscription remove table listen
         messageSub.unsubscribe();
       }
     }
@@ -354,10 +342,13 @@ function groupChatWindow(groupId, name){
 
   function setUpConnChat(){
     //create subscription to unsubscribe.
+    conn.reducers.setGroupChatId({id:groupId});
+
     groupMsgSub = conn
       .subscriptionBuilder()
       .onApplied((ctx)=>{
-        ctx.db.groupChatMessage.onInsert((ctx, row)=>{
+        // ctx.db.groupChatMessage.onInsert((ctx, row)=>{
+        ctx.db.current_group_chat_messages.onInsert((ctx, row)=>{
           let side = '';
           console.log("group msg...");
           if(row.senderId.toHexString() == userIdentity.val.toHexString()){
@@ -370,7 +361,8 @@ function groupChatWindow(groupId, name){
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
-      .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
+      // .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
+      .subscribe(tables.current_group_chat_messages);
 
     // get message
     // conn.db.groupChatMessage.onInsert((ctx, row)=>{
@@ -528,6 +520,10 @@ function App() {
         `
       },
       div({style:"font-weight:bold; margin-bottom:16px;"}, "Hub"),
+      div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      button({onclick:()=>{
+        van.add(document.body, ChatWindow());
+      }},"Public Chat"),
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       // button("Community"),button("+"), 
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
@@ -730,8 +726,8 @@ function STDBPanel(){
 // Add Body
 //-----------------------------------------------
 van.add(document.body, App());
-const chatWindowEl = ChatWindow();
-van.add(document.body, chatWindowEl);
+// const chatWindowEl = ChatWindow();
+// van.add(document.body, chatWindowEl);
 // makeDraggable(chatWindowEl);
 van.add(document.body, UserPanel());
 van.add(document.body, STDBPanel());

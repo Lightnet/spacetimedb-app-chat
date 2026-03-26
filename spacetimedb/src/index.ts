@@ -581,6 +581,31 @@ export const send_group_chat_message = spacetimedb.reducer(
   }
   
 });
+
+//-----------------------------------------------
+// CURRENT GROUP CHAT MESSAGE
+//-----------------------------------------------
+
+export const set_group_chat_id = spacetimedb.reducer(
+  { id:t.u64() },
+  (ctx, { id }) => {
+    console.info(`ctx.sender: ${ctx.sender}  Group Chat Id: ${id}`);
+    const config = ctx.db.groupChatConfig.identity.find(ctx.sender);
+
+    if(config){
+      config.groupChatId = id;
+      ctx.db.groupChatConfig.identity.update(config);
+    }else{
+      ctx.db.groupChatConfig.insert({
+        status: undefined,
+        identity: ctx.sender,
+        createdAt: ctx.timestamp,
+        groupChatId: id
+      })
+    }
+  }
+);
+
 // get user id that current group chat messages.
 export const current_group_chat_messages = spacetimedb.view(
   { name: 'current_group_chat_messages', public: true },
