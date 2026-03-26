@@ -130,7 +130,7 @@ function updateGroupChat(row){
   }
   van.add(groupChatEl, div({id:'group-chat-'+row.id},
     label(" [ "+ row.name + " ] "),
-    button({onclick:()=>setupChatPanel(row.id)},'[ Join ]'),
+    button({onclick:()=>setupChatPanel(row.id, row.name)},'[ Join ]'),
     span(' '),
     button({onclick:()=>delete_group_chat_id(row.id)},'[ Delete ]')
   ))
@@ -174,9 +174,7 @@ function setupDBGroupChat(){
   //     console.error(`Subscription failed: ${error}`);
   //   })
   //   .subscribe(tables.groupChatMessage);
-  }
-
-
+}
 
 //-----------------------------------------------
 // 
@@ -190,12 +188,16 @@ const Message = ({side, name, text}) => div(
 // 
 //-----------------------------------------------
 function ChatWindow() {
+  const closed = van.state(false);
   const messageInput = van.state("");
   const messages = van.state([
     // { side: "received", name: "Steam", text: "Welcome to the black edition chatroom." },
     // { side: "sent",     name: "You",   text: "yo, any drops today?" },
     // { side: "received", name: "Steam", text: "Soon™" },
   ]);
+  let messageSub = null;
+
+
   function sendMessage() {
     const text = messageInput.val.trim();
     if (!text) return;
@@ -207,26 +209,37 @@ function ChatWindow() {
   }
 
   function setUpConnChat(){
-    conn
+    messageSub = conn
       .subscriptionBuilder()
+      .onApplied((ctx)=>{
+        ctx.db.message.onInsert((ctx, row)=>{
+          let side = '';
+          console.log(row)
+          if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+            // console.log("FOUND USER???");
+            side = "sent";
+          }
+          messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+        });
+      })
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
       .subscribe(tables.message);
 
     // get message
-    conn.db.message.onInsert((ctx, row)=>{
-      // console.log(ctx)
-      // console.log(ctx.identity)
-      // console.log(ctx.db)
-      // console.log("message row: ", row);
-      let side = '';
-      if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-        // console.log("FOUND USER???");
-        side = "sent";
-      }
-      messages.val = [...messages.val, { side: side, name: "You", text:row.text }];
-    });
+    // conn.db.message.onInsert((ctx, row)=>{
+    //   // console.log(ctx)
+    //   // console.log(ctx.identity)
+    //   // console.log(ctx.db)
+    //   // console.log("message row: ", row);
+    //   let side = '';
+    //   if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+    //     // console.log("FOUND USER???");
+    //     side = "sent";
+    //   }
+    //   messages.val = [...messages.val, { side: side, name: "You", text:row.text }];
+    // });
   }
 
   function onKeyDown(e) {
@@ -247,6 +260,16 @@ function ChatWindow() {
     },50);
   });
 
+  van.derive(()=>{
+    console.log("group chat closed: ", closed.val);
+    if(closed.val == true){
+      console.log(messageSub);
+      if(messageSub.isActive){
+        messageSub.unsubscribe();
+      }
+    }
+  })
+
   // watch change to update render
   const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
 
@@ -257,7 +280,7 @@ function ChatWindow() {
       div({class: "titlebar-controls"},
         button("_"),
         button("□"),
-        button({class: "close"}, "×"),
+        button({onclick:()=>closed.val=true,class: "close"}, "×"),
       )
     ),
 
@@ -304,11 +327,12 @@ function ChatWindow() {
   });
 
   setUpConnChat();
-  return windowEl;
+  return ()=> closed.val ? null : windowEl;
 }
 
-function groupChatWindow(groupId){
+function groupChatWindow(groupId, name){
   const closed = van.state(false);
+  const groupChatName = van.state(name);
   const messageInput = van.state("");
   const messages = van.state([]);
   let groupMsgSub = null;
@@ -329,6 +353,7 @@ function groupChatWindow(groupId){
   }
 
   function setUpConnChat(){
+    //create subscription to unsubscribe.
     groupMsgSub = conn
       .subscriptionBuilder()
       .onApplied((ctx)=>{
@@ -345,7 +370,7 @@ function groupChatWindow(groupId){
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
-      .subscribe(tables.groupChatMessage);
+      .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
 
     // get message
     // conn.db.groupChatMessage.onInsert((ctx, row)=>{
@@ -375,7 +400,7 @@ function groupChatWindow(groupId){
       }
     },50);
   });
-
+  // This will handle the table to unsubscribe. To stop listen table.
   van.derive(()=>{
     console.log("group chat closed: ", closed.val);
     if(closed.val == true){
@@ -392,7 +417,7 @@ function groupChatWindow(groupId){
   // Create the window element
   const windowEl = div({class: "window"},
     div({class: "titlebar"},
-      div({class: "title"}, "Black Chat — Public"),
+      div({class: "title"}, `${groupChatName.val} - Group Chat`),
       div({class: "titlebar-controls"},
         button("_"),
         button("□"),
@@ -841,11 +866,11 @@ function groupChatPanel(id){
 
 }
 
-function setupChatPanel(id){
+function setupChatPanel(id, name){
   // groupChatPanel
   // van.add(document.body, groupChatPanel(id));
 
-  van.add(document.body, groupChatWindow(id));
+  van.add(document.body, groupChatWindow(id, name));
 }
 
 // van.add(document.body, editAvatarImagePanel());
