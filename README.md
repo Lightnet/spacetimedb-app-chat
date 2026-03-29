@@ -51,6 +51,25 @@
 
   Server group is list of text channel. ( wip )
 
+# Encrypt and Decrypt:
+  Currently not coded.
+
+  For the encrypt and decrypt libraries does required nodje for crypto and random to work. But Spacetime has single random function but no crypto. There are some restrictions since it web assembly sandbox module server.
+
+  The nodejs libraries can't be use since it sandbox but use SpaceTimeDB api.
+
+```
+ctx.random()
+ctx.timestamp
+ctx.newUuidV4()
+ctx.newUuidV7()
+```
+## list:
+  Doing some simple tests.
+- crypto-es ( working simple test, partly not working)
+- nanoid ( failed required crypto)
+- @noble/ciphers ( required random)
+
 # Group chat filter:
   There are differen ways to handle group chat. The SpaceTimeDB has view and anonymousView features. As well there are pros and cons.
 
@@ -200,8 +219,6 @@ export const all_group_chat_messages = spacetimedb.view(
 # SpaceTimeDB view:
 - https://spacetimedb.com/docs/functions/views
 - The view is read only when filter query.
-- 
-
 
 # SpaceTimeDB anonymousView:
 - There is restrict but required public. Mean everyone can view the data in public.
@@ -219,9 +236,7 @@ export const high_scorers = spacetimedb.anonymousView(
 );
 ```
 
-
-
-## server module:
+## Server module:
 ```js
 // https://spacetimedb.com/docs/functions/views
 export const user_current_avatar = spacetimedb.view(
