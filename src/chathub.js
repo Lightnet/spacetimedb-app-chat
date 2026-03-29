@@ -47,6 +47,8 @@ const conn = DbConnection.builder()
   })
   .build();
 
+
+
 function initDB(){
   setUpDBUser();
   setupDataBaseAvatar();
@@ -460,6 +462,10 @@ function groupChatWindow(groupId, name){
   return ()=> closed.val ? null : windowEl;
 }
 
+function onTest(){
+  conn.reducers.testC({});
+}
+
 //-----------------------------------------------
 // 
 //-----------------------------------------------
@@ -527,7 +533,8 @@ function App() {
       }},"+"),
       // div("test"),
       groupChatEl,
-
+      div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      button({onclick:onTest},'Test'),
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       // button("Friend(s)"),
       // button("+"), 
@@ -566,7 +573,7 @@ function App() {
 function UserPanel() {
   // You would normally pull these from state / props / WebRTC / server
   // const username = "Guest";           // ← replace with real data
-  const avatarUrl = "";  // ← real avatar
+  // const avatarUrl = "";  // ← real avatar
   const isMuted   = van.state(false);
   const isDeafened = van.state(false);
 
@@ -869,7 +876,6 @@ function setupChatPanel(id, name){
 //  tables.user.where(r => r.online.eq(true))
 // );
 
-
 // https://spacetimedb.com/docs/clients/typescript/
 // tables.groupMessage.groupId
 // console.log(tables.groupMessage);
@@ -878,3 +884,4 @@ function setupChatPanel(id, name){
 function test_db(){
 
 }
+

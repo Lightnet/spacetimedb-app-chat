@@ -30,8 +30,6 @@ export const set_custom_status = spacetimedb.reducer({ text: t.string() }, (ctx,
   ctx.db.user.identity.update({ ...user, custom_status:text });
 });
 
-
-
 //-----------------------------------------------
 // UPLOAD AVATAR IMAGE
 //-----------------------------------------------
@@ -63,6 +61,7 @@ export const upload_avatar = spacetimedb.reducer({
 
 //-----------------------------------------------
 // USER CURRENT CLIENT AVATAR COUNT
+// test
 //-----------------------------------------------
 export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
   console.log("ctx.db.userAvatar.count(): ", ctx.db.userAvatar.count());

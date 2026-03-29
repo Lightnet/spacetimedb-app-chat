@@ -20,7 +20,6 @@ export const user_current_avatar = spacetimedb.view(
     return undefined;
 });
 
-
 //-----------------------------------------------
 // USER CURRENT STATUS
 //-----------------------------------------------

@@ -1,16 +1,13 @@
 // server api module
 // import { ScheduleAt } from 'spacetimedb';
-// import { Range } from 'spacetimedb/server';
-// import * as TestDB from 'spacetimedb/server';
+// import { Random } from 'spacetimedb/server';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
 import { user, userAvatar } from './models/model_user';
 import { groupChat, groupChatConfig, groupChatMember, groupChatMessage } from './models/model_group_chat';
 import { directMessage, directMessageConfig } from './models/model_direct_message';
-// import { textChannel, textChannelMember, textChannelMessage } from './model_community';
-// import { generateShortId, validateMessage, validateName } from './helper';
-// import { init as initcuid } from "@paralleldrive/cuid2";
 import { generateRandomString } from './helper';
+import { messageEvent } from './models/model_event';
 
 //-----------------------------------------------
 // Message
@@ -41,103 +38,12 @@ const spacetimedb = schema({
   groupChatMember,
   groupChatMessage,
   //=============================================
+  messageEvent,
+  //=============================================
   // textChannel,
   // textChannelMember,
   // textChannelMessage
 });
-//-----------------------------------------------
-// UPLOAD AVATAR IMAGE
-//-----------------------------------------------
-// export const upload_avatar = spacetimedb.reducer({
-//   userId: t.u64(),
-//   mimeType: t.string(),
-//   data: t.array(t.u8()),
-// }, (ctx, { userId, mimeType, data }) => {
-
-//   const user = ctx.db.user.identity.find(ctx.sender);
-//   // console.log(user);
-
-//   if(user){
-//     // console.log("user: ", user);
-//     // console.log("mimeType: ", mimeType);
-//     // console.log("data: ", data);
-//     // Delete existing avatar if present
-//     ctx.db.userAvatar.userId.delete(user.id);
-
-//     // Insert new avatar
-//     ctx.db.userAvatar.insert({
-//       userId:user.id,
-//       mimeType,
-//       data,
-//       uploadedAt: ctx.timestamp,
-//     });
-//   }
-// });
-//-----------------------------------------------
-// USER CURRENT CLIENT AVATAR COUNT
-//-----------------------------------------------
-// export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
-//   console.log("ctx.db.userAvatar.count(): ", ctx.db.userAvatar.count());
-//   const user = ctx.db.user.identity.find(ctx.sender);
-
-//   if(user){
-//     // console.log("user id exist:", ctx.db.userAvatar.userId.find(user.id));
-//     for (const row of ctx.db.userAvatar.iter()) {
-//       console.log("Found avatar for user:", row.userId);
-//       // Do something with row.data...
-//       // console.log(row );
-//     }
-//   }
-// });
-//-----------------------------------------------
-// GET CURRENT AVATAR IMAGE
-//-----------------------------------------------
-// testing get image
-// export const get_avatar = spacetimedb.procedure(
-//   { id:t.u64() }, 
-//   // t.object('Name', { data: t.array(t.u8()),type:t.string()  }),
-//   // t.object('AvatarResult', { 
-//   t.object('Name', { //return data if exist
-//     data: t.option(t.array(t.u8())), 
-//     type: t.string() 
-//   }),
-//   (ctx,{id})=>{
-//   // let data=null;
-//   // let type=null;
-//   let file = ctx.withTx(ctx => {
-//     const user = ctx.db.user.identity.find(ctx.sender);
-//     if(user){
-//       const user_avatar = ctx.db.userAvatar.userId.find(user.id);
-//       // console.log("user id exist:", user_avatar?.userId);
-//       if(user_avatar){
-//         // data = user_avatar.data;
-//         // type = user_avatar.mimeType;
-//         return { data: user_avatar.data, type: user_avatar.mimeType };
-//       }
-//       return null;
-//     }
-//   });
-//   if(file){
-//     return {data:file?.data, type:file?.type};
-//   }else{
-//     return { data: undefined, type: "" };
-//   }
-// })
-//-----------------------------------------------
-// GET CURRENT AVATAR IMAGE VIEW
-//-----------------------------------------------
-// https://spacetimedb.com/docs/functions/views
-// export const user_current_avatar = spacetimedb.view(
-//   { name: 'user_current_avatar', public: true },
-//   t.option(userAvatar.rowType),//return row data if exist
-//   (ctx) => {
-//     const user = ctx.db.user.identity.find(ctx.sender);
-//     if(user){
-//       const user_avatar = ctx.db.userAvatar.userId.find(user.id);
-//       return user_avatar ?? undefined; 
-//     }
-//     return undefined;
-// });
 
 //-----------------------------------------------
 // INIT
@@ -159,9 +65,10 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
   if (user) {
     ctx.db.user.identity.update({ ...user, online: true });
   } else {
+    // let generateName = generateRandomString(ctx,12);
 
-    let generateName = generateRandomString(ctx,12);
-
+    let generateName = String(ctx.newUuidV7()).replaceAll("-","");
+    
     ctx.db.user.insert({
       identity: ctx.sender,
       id: 0n,

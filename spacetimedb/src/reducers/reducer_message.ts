@@ -1,3 +1,5 @@
+// test sample
+
 import { t } from "spacetimedb/server";
 import { validateMessage } from "../helper";
 import spacetimedb from "../module";

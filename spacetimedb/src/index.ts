@@ -33,11 +33,14 @@ import {
   current_user
 } from './views/view_user';
 
+import {test_c} from './reducers/reducer_test';
 
 export {
+  // spacetimedb predefine
   init,
   onConnect,
   onDisconnect,
+  // dev 
   set_name,
   set_custom_status,
   current_user,
@@ -54,6 +57,8 @@ export {
   current_group_chat_messages,
   send_group_chat_message,
   delete_group_chat,
+  // tests
+  test_c,
 }
 
 export default spacetimedb;
