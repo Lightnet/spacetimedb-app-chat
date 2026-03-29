@@ -4,19 +4,148 @@ import spacetimedb from '../module';
 // import { validateName } from '../helper';
 
 //-----------------------------------------------
-// SET USER NAME
+// ADD CONTACT
 //-----------------------------------------------
-export const set_name = spacetimedb.reducer(
+export const add_contact = spacetimedb.reducer(
   { name: t.string() }, 
   (ctx, { name }) => {
-    // console.info("Name: ",name);
-    // validateName(name);
-    // const user = ctx.db.user.identity.find(ctx.sender);
-    // console.log("[server] Set Name:", name);
-    // console.log(user);
-    // if (!user) {
-    //   throw new SenderError('Cannot set name for unknown user');
+    // //check for current user
+    // const own = ctx.db.user.identity.find(ctx.sender);
+    // if(!own){
+    //   return;
     // }
-    // ctx.db.user.identity.update({ ...user, name });
+    // //check register user exist
+    // const user = ctx.db.user.userId.find(id);
+    // let isFound = false;
+    // if(user){
+    //   for (const contact of ctx.db.contact.identity.filter(own.userId)){
+    //     if(contact.userId == id){
+    //       console.log("found");
+    //       isFound=true;
+    //       break;
+    //     }
+    //   }
+    //   //make sure contact user exist and not found to add once.
+    //   if((isFound == false)&&(user != null)){
+    //     ctx.db.contact.insert({
+    //       identity: own.userId,
+    //       userId: id,
+    //       created_at: ctx.timestamp,
+    //       isBlock: false
+    //     });
+    //   }
+    // }else{
+    //   throw new SenderError("User does not exist!");  
+    // }
   }
 );
+
+//-----------------------------------------------
+// ADD CONTACT ID
+//-----------------------------------------------
+export const add_contact_id = spacetimedb.reducer(
+  { id: t.string() }, 
+  (ctx, { id }) => {
+    //check for current user
+    const own = ctx.db.user.identity.find(ctx.sender);
+    if(!own){
+      return;
+    }
+    //check register user exist
+    const user = ctx.db.user.userId.find(id);
+    let isFound = false;
+    if(user){
+      for (const contact of ctx.db.contact.identity.filter(own.userId)){
+        if(contact.userId == id){
+          console.log("found");
+          isFound=true;
+          break;
+        }
+      }
+      //make sure contact user exist and not found to add once.
+      if((isFound == false)&&(user != null)){
+        ctx.db.contact.insert({
+          id:ctx.newUuidV7().toString(),
+          identity: own.userId,
+          userId: id,
+          created_at: ctx.timestamp,
+          isBlock: false
+        });
+      }
+    }else{
+      throw new SenderError("User does not exist!");  
+    }
+  }
+);
+//-----------------------------------------------
+// REMOVE CONTACT
+//-----------------------------------------------
+export const remove_contact = spacetimedb.reducer(
+  { name: t.string() }, 
+  (ctx, { name }) => {
+    
+  }
+);
+//-----------------------------------------------
+// REMOVE CONTACT ID
+//-----------------------------------------------
+export const remove_contact_id = spacetimedb.reducer(
+  { id: t.string() }, 
+  (ctx, { id }) => {
+    // 
+    const own = ctx.db.user.identity.find(ctx.sender);
+    if(!own){
+      return;
+    }
+    //check register user exist
+    const user = ctx.db.user.userId.find(id);
+    let isFound = false;
+    if(user){
+      for (const contact of ctx.db.contact.identity.filter(own.userId)){
+        if(contact.userId == id){
+          console.log("found");
+          ctx.db.contact.delete(contact);
+          break;
+        }
+      }
+    }else{
+      throw new SenderError("User does not exist!");  
+    }
+  }
+);
+//-----------------------------------------------
+// BLOCK CONTACT
+//-----------------------------------------------
+export const block_contact = spacetimedb.reducer(
+  { name: t.string() }, 
+  (ctx, { name }) => {
+    
+  }
+);
+
+export const block_contact_id = spacetimedb.reducer(
+  { id: t.string() }, 
+  (ctx, { id }) => {
+    const own = ctx.db.user.identity.find(ctx.sender);
+    if(!own){
+      return;
+    }
+    //check register user exist
+    const user = ctx.db.user.userId.find(id);
+    // let isFound = false;
+    if(user){
+      for (const contact of ctx.db.contact.identity.filter(own.userId)){
+        if(contact.userId == id){
+          console.log("found");
+          // contact.isBlock = true;
+          ctx.db.contact.id.update(contact);
+          break;
+        }
+      }
+    }else{
+      throw new SenderError("User does not exist!");  
+    }
+  }
+);
+
+

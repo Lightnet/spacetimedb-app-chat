@@ -8,6 +8,7 @@ import { groupChat, groupChatConfig, groupChatMember, groupChatMessage } from '.
 import { directMessage, directMessageConfig } from './models/model_direct_message';
 import { generateRandomString } from './helper';
 import { messageEvent } from './models/model_event';
+import { contact } from './models/model_contact';
 
 //-----------------------------------------------
 // Message
@@ -28,6 +29,7 @@ const message = table(
 const spacetimedb = schema({
   user,
   userAvatar,
+  contact,
   message,
   //=============================================
   directMessage,

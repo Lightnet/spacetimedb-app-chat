@@ -12,8 +12,7 @@ export const create_group_chat = spacetimedb.reducer(
   {name:t.string(), content: t.string() },
   (ctx, { name, content }) => {
   validateMessage(name);
-  console.info(`User ${ctx.sender}: ${name}`);
-
+  // console.info(`User ${ctx.sender}: ${name}`);
   const group = ctx.db.groupChat.insert({
     status: undefined,
     id: 0n,
@@ -23,9 +22,7 @@ export const create_group_chat = spacetimedb.reducer(
     createdAt: ctx.timestamp,
     parentId: 0n
   });
-
-  console.log("group:", group);
-
+  //console.log("group:", group);
   if(group){
     ctx.db.groupChatMember.insert({
       status: undefined,
@@ -37,8 +34,9 @@ export const create_group_chat = spacetimedb.reducer(
     });
   }
 });
-
-
+//-----------------------------------------------
+// DELETE GROUP CHAT
+//-----------------------------------------------
 export const delete_group_chat = spacetimedb.reducer(
   {id:t.u64() },
   (ctx, { id }) => {
@@ -53,8 +51,9 @@ export const delete_group_chat = spacetimedb.reducer(
     // }
   }
 });
-
-
+//-----------------------------------------------
+// SEND GROUP CHAT MESSAGE
+//-----------------------------------------------
 export const send_group_chat_message = spacetimedb.reducer(
   {id:t.u64(), content:t.string() },
   (ctx, { id, content }) => {
@@ -72,11 +71,9 @@ export const send_group_chat_message = spacetimedb.reducer(
     });
   }
 });
-
 //-----------------------------------------------
 // CURRENT GROUP CHAT MESSAGE
 //-----------------------------------------------
-
 export const set_group_chat_id = spacetimedb.reducer(
   { id:t.u64() },
   (ctx, { id }) => {

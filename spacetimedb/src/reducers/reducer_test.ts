@@ -76,7 +76,9 @@ import { utf8ToBytes } from '@noble/hashes/utils.js'; // or use TextEncoder/Deco
 
 //   return bytesToUtf8(decrypted);   // or new TextDecoder().decode(decrypted)
 // }
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 export const group_test = spacetimedb.reducer(
   {  },
   (ctx, {  }) => {
@@ -104,7 +106,9 @@ export const group_test = spacetimedb.reducer(
     ctx.timestamp
   }
 );
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 export const test_c = spacetimedb.reducer(
   {  },
   async (ctx, {  }) => {
@@ -236,5 +240,13 @@ export const test_c = spacetimedb.reducer(
 
     console.log("END")
   })
+//crypto.getRandomValues npm install @noble/ciphers @noble/hashes // nope
 
-  //crypto.getRandomValues npm install @noble/ciphers @noble/hashes // nope
+export const test_id = spacetimedb.reducer(
+  {  },
+  async (ctx, {  }) => {
+    //
+    let id:String = ctx.newUuidV7().toString();
+    console.log("id: ", id);
+  }
+)

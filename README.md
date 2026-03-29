@@ -8,12 +8,12 @@
 - not ready for production.
 
 # SpaceTimeDB:
-- spacetimedb binary 2.0.5
+- spacetimedb binary 2.1.0
 
 # NPM Package:
 - vanjs-core 1.6.0
 - vanjs-ui
-- spacetimedb 2.0.4
+- spacetimedb 2.1.0
 - vite 8.0.0
 
 # Features:
@@ -77,32 +77,35 @@ ctx.newUuidV7()
 
 ## client side:
   It has it pros and cons. It can easy expose the public messages from other chat groups. Reason it open to query easy.
+
 ### method 1
 ```js
   const closed = van.state(false);
   const messages = van.state([]);
   let groupMsgSub = null;
   //...
+
+  function update_message(ctx, row){
+    let side = '';
+    console.log("group msg...");
+    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+      // console.log("FOUND USER???");
+      side = "sent";
+    }
+    messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+  }
   function setUpConnChat(){
     //create subscription to unsubscribe.
     conn.reducers.setGroupChatId({id:groupId});
     groupMsgSub = conn
       .subscriptionBuilder()
       .onApplied((ctx)=>{
-        ctx.db.current_group_chat_messages.onInsert((ctx, row)=>{
-          let side = '';
-          console.log("group msg...");
-          if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-            // console.log("FOUND USER???");
-            side = "sent";
-          }
-          messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
-        });
+        ctx.db.current_group_chat_messages.onInsert(update_message);
       })
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
-      // .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
+      //.subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
       .subscribe(tables.current_group_chat_messages);
   }
   //...
@@ -112,6 +115,8 @@ ctx.newUuidV7()
     if(closed.val == true){
       console.log(groupMsgSub);
       if(groupMsgSub.isActive){
+        // remove callback function
+        conn.db.current_group_chat_messages.removeOnInsert(update_messages)
         groupMsgSub.unsubscribe();
       }
     }
@@ -183,6 +188,44 @@ export const all_group_chat_messages = spacetimedb.view(
     // return []
   })
 ```
+
+# callbacks onInsert, onUpdate, OnDelete:
+  Note that when create a window instance. When handle the element window panel floating.
+
+```ts
+function update_messages(ctx, row){
+  //do something
+}
+//...
+const groupMsgSub = conn
+  .subscriptionBuilder()
+  .onApplied((ctx)=>{
+    ctx.db.current_group_chat_messages.onInsert(update_messages);
+  })
+  .subscribe(tables.current_group_chat_messages);
+//...
+
+// This will handle the table to unsubscribe. To stop listen table.
+van.derive(()=>{
+  console.log("group chat closed: ", closed.val);
+  if(closed.val == true){
+    console.log(groupMsgSub);
+    if(groupMsgSub.isActive){
+      // since it view it need main connector client
+      conn.db.current_group_chat_messages.removeOnInsert(update_messages)
+      groupMsgSub.unsubscribe();
+    }
+  }
+})
+
+//...
+// this will handle window panel clean way.
+// make sure it clean up once the element is remove from the doc body.
+return ()=> closed.val ? null : windowEl;
+//...
+```
+  Make sure create a function to register and unregister. Else it would stack in the listeners once reused callback functions.
+
 
 # SpaceTimeDB Information:
 

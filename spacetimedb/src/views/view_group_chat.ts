@@ -1,10 +1,14 @@
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 import spacetimedb from '../module';
 import { user, userAvatar } from '../models/model_user';
 import { validateMessage, validateName } from '../helper';
 import { groupChatMessage } from '../models/model_group_chat';
-
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 export const current_group_chat_messages = spacetimedb.view(
   { name: 'current_group_chat_messages', public: true },
   t.array(groupChatMessage.rowType), 
@@ -18,8 +22,9 @@ export const current_group_chat_messages = spacetimedb.view(
     return [];
   }
 );
-
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 export const my_group_chat_messages = spacetimedb.view(
   { name: 'my_group_chat_messages', public: true },
   t.array(groupChatMessage.rowType), 
@@ -36,7 +41,9 @@ export const my_group_chat_messages = spacetimedb.view(
     return [];
   }
 );
-
+//-----------------------------------------------
+// filter base on current user added / join groups.
+//-----------------------------------------------
 export const all_group_chat_messages = spacetimedb.view(
   { name: 'all_group_chat_messages', public: true },
   t.array(groupChatMessage.rowType), 

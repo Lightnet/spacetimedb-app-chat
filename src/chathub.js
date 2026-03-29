@@ -3,13 +3,15 @@
 // 
 import { DbConnection, tables } from './module_bindings';
 import van from "vanjs-core";
-import { networkStatus, userIdentity, userName, userStatus, userAvatarUrl } from './context.js';
+import { networkStatus, userIdentity, userName, userStatus, userAvatarUrl, connState, userId } from './context.js';
 import { Modal } from "vanjs-ui";
 
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
 const HOST = 'ws://localhost:3000';
 const DB_NAME = 'spacetime-app-chat';
+const TOKEN_KEY = `${HOST}/${DB_NAME}/auth_token`;
+// localStorage.getItem('auth_token')
 //-----------------------------------------------
 //
 //-----------------------------------------------
@@ -18,6 +20,7 @@ const DB_NAME = 'spacetime-app-chat';
 // const username = van.state('Guest');
 
 const groupChatEl = div();
+const contactEl = div();
 
 //-----------------------------------------------
 //
@@ -25,11 +28,14 @@ const groupChatEl = div();
 const conn = DbConnection.builder()
   .withUri(HOST)
   .withDatabaseName(DB_NAME)
-  .withToken(localStorage.getItem('auth_token') || undefined)
+  // .withToken(localStorage.getItem('auth_token') || undefined)
+  .withToken(localStorage.getItem(TOKEN_KEY) || undefined)
   .onConnect((conn, identity, token) => {
+    localStorage.setItem(TOKEN_KEY, token);
     networkStatus.val = 'Connected';
+    connState.val = conn;
     // console.log("identity: ", identity);
-    // console.log("identity: ", identity.toHexString());
+    console.log("identity: ", identity.toHexString());
     // console.log("conn: ", conn);
     // filter from table update calls...
     userIdentity.val = identity;
@@ -47,12 +53,14 @@ const conn = DbConnection.builder()
   })
   .build();
 
-
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 function initDB(){
   setUpDBUser();
   setupDataBaseAvatar();
   setupDBGroupChat();
+  setupDBContact();
   // test_db();
 }
 
@@ -72,6 +80,8 @@ function setUpDBUser(){
       // console.log("Name: ",row.name)
       userName.val = row.name ?? 'Uknown';
       userStatus.val = row.customStatus ?? 'Idle';
+      userId.val = row.userId;
+      console.log("row.userId: ", row.userId);
     }
   });
 
@@ -116,6 +126,44 @@ function setupDataBaseAvatar(){
 }
 
 //-----------------------------------------------
+// CONTACT
+//-----------------------------------------------
+function delete_contact_id(id){
+
+}
+
+function update_contact(row){
+  const groupChatElId = document.getElementById('contact-'+row.id);
+  if(groupChatElId){
+    groupChatElId.remove();
+  }
+  van.add(groupChatEl, div({id:'contact-'+row.id},
+    label(" [ ID:"+ row.userId + " ] "),
+    span(' '),
+    button({onclick:()=>delete_contact_id(row.id)},'[ Delete ]')
+  ))
+}
+
+
+function setupDBContact(){
+  conn
+    .subscriptionBuilder()
+    .onError((ctx, error) => {
+      console.error(`Subscription failed: ${error}`);
+    })
+    .onApplied((ctx)=>{
+      // ctx.
+      // console.log(ctx);
+    })
+    .subscribe(tables.view_contact);
+
+  conn.db.view_contact.onInsert((ctx, row)=>{
+    console.log("Contact Added...", row);
+    update_contact(row);
+  });
+}
+
+//-----------------------------------------------
 // GROUP CHAT
 //-----------------------------------------------
 function delete_group_chat_id(id){
@@ -150,8 +198,8 @@ function setupDBGroupChat(){
     .subscribe(tables.groupChat);
 
   conn.db.groupChat.onInsert((ctx, row)=>{
-    console.log("Group Chat");
-    console.log(row);
+    // console.log("Group Chat");
+    // console.log(row);
     // displayAvatar(row.data, row.type);
     updateGroupChat(row)
   })
@@ -178,7 +226,7 @@ function setupDBGroupChat(){
 }
 
 //-----------------------------------------------
-// 
+// MESSAGE
 //-----------------------------------------------
 const Message = ({side, name, text}) => div(
   {class: () => `message ${side}`},
@@ -186,17 +234,19 @@ const Message = ({side, name, text}) => div(
   text
 );
 //-----------------------------------------------
-// 
+// PUBLIC CHAT WINDOW
 //-----------------------------------------------
 function ChatWindow() {
   const closed = van.state(false);
   const messageInput = van.state("");
+  const closeMesage = van.state(false);
   const messages = van.state([
     // { side: "received", name: "Steam", text: "Welcome to the black edition chatroom." },
     // { side: "sent",     name: "You",   text: "yo, any drops today?" },
     // { side: "received", name: "Steam", text: "Soon™" },
   ]);
   let messageSub = null;
+  // let connMessage = null;
 
 
   function sendMessage() {
@@ -208,26 +258,35 @@ function ChatWindow() {
       text:text
     });
   }
+
+  function update_message(ctx, row){
+    if(closeMesage.val == true){
+      console.log("close chat...");
+      return;
+    }
+    let side = '';
+    console.log(row)
+    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+      // console.log("FOUND USER???");
+      side = "sent";
+    }
+    messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+  }
+
 // https://spacetimedb.com/docs/clients/subscriptions/
   function setUpConnChat(){
     //create subscription
     messageSub = conn
       .subscriptionBuilder()
       .onApplied((ctx)=>{
-        ctx.db.message.onInsert((ctx, row)=>{
-          let side = '';
-          console.log(row)
-          if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-            // console.log("FOUND USER???");
-            side = "sent";
-          }
-          messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
-        });
+        // connMessage = ctx;
+        ctx.db.message.onInsert(update_message);
       })
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
       .subscribe(tables.message);
+    console.log(messageSub);
   }
 
   function onKeyDown(e) {
@@ -253,16 +312,12 @@ function ChatWindow() {
     if(closed.val == true){
       console.log(messageSub);
       if(messageSub != null){
-      // if(messageSub.isActive){
-        // subscription remove table listen
-        // messageSub.unsubscribe();
-        messageSub.unsubscribeThen((e)=>{
-          console.log(e);
-        });
-        // messageSub = null;
-        console.log(messageSub);
-        console.log("unsubscribe");
-        console.log(conn);
+        if(messageSub.isActive){
+          // remove callback function
+          conn.db.message.removeOnInsert(update_message);
+          // subscription remove table listen
+          messageSub.unsubscribe();
+        }
       }
     }
   })
@@ -349,6 +404,16 @@ function groupChatWindow(groupId, name){
     });
   }
 
+  function update_messages(ctx, row){
+    let side = '';
+    console.log("group msg...");
+    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+      // console.log("FOUND USER???");
+      side = "sent";
+    }
+    messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+  }
+
   function setUpConnChat(){
     //create subscription to unsubscribe.
     conn.reducers.setGroupChatId({id:groupId});
@@ -357,15 +422,7 @@ function groupChatWindow(groupId, name){
       .subscriptionBuilder()
       .onApplied((ctx)=>{
         // ctx.db.groupChatMessage.onInsert((ctx, row)=>{
-        ctx.db.current_group_chat_messages.onInsert((ctx, row)=>{
-          let side = '';
-          console.log("group msg...");
-          if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-            // console.log("FOUND USER???");
-            side = "sent";
-          }
-          messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
-        });
+        ctx.db.current_group_chat_messages.onInsert(update_messages);
       })
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
@@ -397,6 +454,8 @@ function groupChatWindow(groupId, name){
     if(closed.val == true){
       console.log(groupMsgSub);
       if(groupMsgSub.isActive){
+        // since it view it need main connector client
+        conn.db.current_group_chat_messages.removeOnInsert(update_messages)
         groupMsgSub.unsubscribe();
       }
     }
@@ -463,7 +522,30 @@ function groupChatWindow(groupId, name){
 }
 
 function onTest(){
-  conn.reducers.testC({});
+  // conn.reducers.testC({});
+  conn.reducers.testId()
+}
+
+function contactAdd(){
+  const closed = van.state(false);
+  const contactId = van.state('');
+
+  function create_group(){
+    console.log("create : ", contactId.val);
+    conn.reducers.addContact({
+      id:contactId.val
+    })
+  }
+
+  return Modal({closed, },
+    p({style:`background-color:black;`},"Add Contact:"),
+    div({style: "display: flex; justify-content: center;background-color:black;"},
+      label('Name: '), input({value:contactId.val, oninput:e=>contactId.val=e.target.value}),
+      button({onclick:create_group}, "Create"),
+      button({onclick: () => closed.val = true}, "Cancel"),
+    ),
+  )
+
 }
 
 //-----------------------------------------------
@@ -533,6 +615,11 @@ function App() {
       }},"+"),
       // div("test"),
       groupChatEl,
+      div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      button({},"Contact"),button({onclick:()=>{
+        van.add(document.body, contactAdd());
+      }},"+"),
+      contactEl,
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       button({onclick:onTest},'Test'),
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),

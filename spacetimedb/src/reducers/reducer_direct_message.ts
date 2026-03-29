@@ -25,8 +25,9 @@ export const send_direct_message = spacetimedb.reducer(
     createdAt: ctx.timestamp,
   });
 });
-
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 export const my_direct_message = spacetimedb.view(
   {name:'my_direct_message', public:true },
   t.array(directMessage.rowType),
@@ -36,3 +37,4 @@ export const my_direct_message = spacetimedb.view(
     )
     return received ?? [];
 });
+

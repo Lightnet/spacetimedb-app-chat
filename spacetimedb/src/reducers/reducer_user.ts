@@ -18,7 +18,9 @@ export const set_name = spacetimedb.reducer({ name: t.string() }, (ctx, { name }
   
   ctx.db.user.identity.update({ ...user, name });
 });
-
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 export const set_custom_status = spacetimedb.reducer({ text: t.string() }, (ctx, { text }) => {
   // console.info("Name: ",name);
   validateName(text);
@@ -29,7 +31,6 @@ export const set_custom_status = spacetimedb.reducer({ text: t.string() }, (ctx,
   }
   ctx.db.user.identity.update({ ...user, custom_status:text });
 });
-
 //-----------------------------------------------
 // UPLOAD AVATAR IMAGE
 //-----------------------------------------------
@@ -58,7 +59,6 @@ export const upload_avatar = spacetimedb.reducer({
     });
   }
 });
-
 //-----------------------------------------------
 // USER CURRENT CLIENT AVATAR COUNT
 // test
@@ -76,7 +76,6 @@ export const user_avatar_count = spacetimedb.reducer({},(ctx, args ) => {
     }
   }
 });
-
 //-----------------------------------------------
 // GET CURRENT AVATAR IMAGE
 //-----------------------------------------------

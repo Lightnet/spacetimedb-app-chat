@@ -8,6 +8,20 @@ import {
   upload_avatar,
 } from './reducers/reducer_user';
 
+import {
+  user_current_avatar,
+  current_user
+} from './views/view_user';
+
+import { 
+  add_contact,
+  add_contact_id,
+  // remove_contact,
+  // block_contact,
+} from './reducers/reducer_contact';
+
+import { view_contact } from './views/view_contact';
+
 import { 
   send_direct_message, 
   my_direct_message 
@@ -29,23 +43,25 @@ import {
 } from './views/view_group_chat';
 
 import {
-  user_current_avatar,
-  current_user
-} from './views/view_user';
+  test_c,
+  test_id,
 
-import {test_c} from './reducers/reducer_test';
+} from './reducers/reducer_test';
 
 export {
   // spacetimedb predefine
   init,
   onConnect,
   onDisconnect,
-  // dev 
+  // user 
   set_name,
   set_custom_status,
   current_user,
   user_current_avatar,
   upload_avatar,
+  add_contact,
+  add_contact_id,
+  view_contact,
   //
   send_message, // test
   // 
@@ -59,6 +75,7 @@ export {
   delete_group_chat,
   // tests
   test_c,
+  test_id,
 }
 
 export default spacetimedb;
