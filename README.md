@@ -2,7 +2,7 @@
 
 # Licence: MIT
 
-# status:
+# Status:
 - prototyping
 - in development
 - not ready for production.
@@ -28,6 +28,7 @@
 - simple chat ui ( wip )
 - group chat ( wip )
   - group name
+  - group config
   - group member
   - group message
 - notifications
@@ -64,7 +65,7 @@ ctx.timestamp
 ctx.newUuidV4()
 ctx.newUuidV7()
 ```
-## list:
+## List:
   Doing some simple tests.
 - crypto-es ( working simple test, partly not working)
 - nanoid ( failed required crypto)
@@ -75,10 +76,10 @@ ctx.newUuidV7()
 
   https://spacetimedb.com/docs/functions/views
 
-## client side:
+## Client side:
   It has it pros and cons. It can easy expose the public messages from other chat groups. Reason it open to query easy.
 
-### method 1
+### Method 1
 ```js
   const closed = van.state(false);
   const messages = van.state([]);
@@ -125,7 +126,7 @@ ctx.newUuidV7()
 
 ## Server side:
   It same but required more load but reduce bandwidth sending the message data to filter out.
-### method 1
+### Method 1
 ```js
 export const set_group_chat_id = spacetimedb.reducer(
   { id:t.u64() },
@@ -162,7 +163,7 @@ export const current_group_chat_messages = spacetimedb.view(
   }
 );
 ```
-### method 2
+### Method 2
 ```ts
 export const all_group_chat_messages = spacetimedb.view(
   { name: 'all_group_chat_messages', public: true },
@@ -189,7 +190,7 @@ export const all_group_chat_messages = spacetimedb.view(
   })
 ```
 
-# callbacks onInsert, onUpdate, OnDelete:
+# Callbacks onInsert, onUpdate, OnDelete:
   Note that when create a window instance. When handle the element window panel floating.
 
 ```ts

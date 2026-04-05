@@ -45,7 +45,8 @@ import {
 import {
   test_c,
   test_id,
-
+  test_random,
+  test_salt,
 } from './reducers/reducer_test';
 
 export {
@@ -76,6 +77,8 @@ export {
   // tests
   test_c,
   test_id,
+  test_random,
+  test_salt
 }
 
 export default spacetimedb;

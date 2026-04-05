@@ -522,8 +522,11 @@ function groupChatWindow(groupId, name){
 }
 
 function onTest(){
+  console.log("test");
   // conn.reducers.testC({});
-  conn.reducers.testId()
+  // conn.reducers.testId()
+  // conn.reducers.testRandom()
+  conn.reducers.testSalt()
 }
 
 function contactAdd(){
