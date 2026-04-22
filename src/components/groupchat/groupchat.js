@@ -20,13 +20,71 @@ export function groupChatCreate(){
     });
   }
 
-  return Modal({closed, },
-    p({style:`background-color:black;`},"Name the Group Chat:"),
-    div({style: "display: flex; justify-content: center;background-color:black;"},
-       label('Group Name: '), input({value:groupName.val, oninput:e=>groupName.val=e.target.value}),
-      button({onclick:create_group}, "Create"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
+  return Modal({closed},
+    div({style: `
+      display: flex; 
+      flex-direction: column; 
+      gap: 1.5rem; 
+      padding: 24px; 
+      background-color: #1a1a1a; 
+      color: #fff; 
+      border-radius: 12px;
+      min-width: 320px;
+      font-family: sans-serif;
+    `},
+      // Header
+      p({style: `margin: 0; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 10px;`}, 
+        "Create Group Chat"
+      ),
+
+      // Field Container
+      div({style: `display: flex; flex-direction: column; gap: 8px;`},
+        label({style: `font-size: 0.9rem; color: #bbb;`}, "Group Name"),
+        input({
+          value: groupName, 
+          oninput: e => groupName.val = e.target.value,
+          placeholder: "Enter group name...",
+          style: `
+            padding: 12px; 
+            background: #2a2a2a; 
+            color: white; 
+            border: 1px solid #444; 
+            border-radius: 6px;
+            outline: none;
+          `
+        })
+      ),
+
+      // Centered Action Buttons
+      div({style: `display: flex; justify-content: center; gap: 12px;`},
+        button({
+          onclick: create_group,
+          style: `
+            padding: 10px 24px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+          `
+        }, "Create"),
+        
+        button({
+          onclick: () => closed.val = true,
+          style: `
+            padding: 10px 24px; 
+            background: transparent; 
+            color: #888; 
+            border: 1px solid #444; 
+            border-radius: 6px; 
+            cursor: pointer;
+            flex: 1;
+          `
+        }, "Cancel")
+      )
+    )
   )
 }
 

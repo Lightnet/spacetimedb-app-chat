@@ -18,13 +18,67 @@ export function contactAdd(){
     })
   }
 
-  return Modal({closed, },
-    p({style:`background-color:black;`},"Add Contact:"),
-    div({style: "display: flex; justify-content: center;background-color:black;"},
-      label('Name: '), input({value:contactId.val, oninput:e=>contactId.val=e.target.value}),
-      button({onclick:create_group}, "Create"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
+  return Modal({closed},
+    div({style: `
+      display: flex; 
+      flex-direction: column; 
+      gap: 1.5rem; 
+      padding: 24px; 
+      background-color: #1a1a1a; 
+      color: #fff; 
+      border-radius: 12px;
+      min-width: 300px;
+    `},
+      // Header
+      p({style: `margin: 0; font-size: 1.1rem; font-weight: bold;`}, "Add Contact"),
+
+      // Input Group
+      div({style: `display: flex; flex-direction: column; gap: 8px;`},
+        label({style: `font-size: 0.85rem; color: #aaa;`}, "User ID or Name"),
+        input({
+          value: contactId, 
+          oninput: e => contactId.val = e.target.value,
+          placeholder: "Enter contact detail...",
+          style: `
+            padding: 10px; 
+            background: #2d2d2d; 
+            color: white; 
+            border: 1px solid #444; 
+            border-radius: 6px;
+          `
+        })
+      ),
+
+      // Centered Buttons
+      div({style: `display: flex; justify-content: center; gap: 12px;`},
+        button({
+          onclick: create_group, // Note: You might want to rename this function to add_contact
+          style: `
+            flex: 1;
+            padding: 10px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: bold;
+          `
+        }, "Add"),
+        
+        button({
+          onclick: () => closed.val = true,
+          style: `
+            flex: 1;
+            padding: 10px; 
+            background: transparent; 
+            color: #888; 
+            border: 1px solid #444; 
+            border-radius: 6px; 
+            cursor: pointer;
+          `
+        }, "Cancel")
+      )
+    )
   )
 
 }

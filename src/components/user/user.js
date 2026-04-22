@@ -6,7 +6,7 @@ import { Modal } from "vanjs-ui";
 import van from "vanjs-core";
 import { stateConn, userAvatarUrl, userName, userStatus } from "../../context";
 
-const { div, input, textarea, button, span, img, label, p } = van.tags;
+const { div, input, textarea, button, span, img, label, p, select, option, h3 } = van.tags;
 
 //-----------------------------------------------
 // MODAL EDIT USER NAME PANEL
@@ -170,41 +170,6 @@ function editStatusPanel(){
 }
 // van.add(document.body, editStatusPanel());
 
-// function editAvatarImagePanel(){
-//   const closed = van.state(false)
-//   const el_file = input({type:'file'})
-//   async function upload_file(event){
-//     // console.log(event);
-//     const file = el_file.files[0];
-//     // console.log(file);
-//     // console.log(file.type);
-//     const arrayBuffer = await file.arrayBuffer();
-//     const fileBytes = new Uint8Array(arrayBuffer);
-//     // console.log(arrayBuffer);
-//     try {
-//       const conn = stateConn.val;
-//       await conn.reducers.uploadAvatar({
-//         userId:BigInt(1),
-//         mimeType:file.type,
-//         data:fileBytes
-//       });  
-//       console.log("pass!");
-//       closed.val = true;
-//     } catch (error) {
-//       console.log("upload failed!", error.message);
-//     }
-//   }
-//   return Modal({closed},
-//     p("Edit Upload Image"),
-//     img({width:48,height:48}),//preview image
-//     p("(48x48)"),
-//     div({style: "display: flex; justify-content: center;"},
-//       el_file,
-//       button({onclick:upload_file}, "Upload File"),
-//       button({onclick: () => closed.val = true}, "Cancel"),
-//     ),
-//   )
-// }
 
 function editAvatarImagePanel() {
   const closed = van.state(false);
@@ -282,6 +247,90 @@ function editAvatarImagePanel() {
   )
 }
 
+
+function userSettingsPanel() {
+  const closed = van.state(false);
+
+  // Dark Theme Palette
+  const colors = {
+    bg: "#121212",      // Deep gray background
+    surface: "#1E1E1E", // Slightly lighter surface for rows
+    text: "#E0E0E0",    // Soft white text
+    accent: "#BB86FC",  // Desaturated purple for buttons/accents
+    border: "#333333"
+  };
+
+  const Row = (...children) => div(
+    {
+      style: `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 8px 12px;
+        background: ${colors.surface};
+        border-radius: 6px;
+        gap: 1rem;
+      `
+    },
+    ...children
+  );
+
+  return Modal({ closed },
+    div(
+      { 
+        style: `
+          padding: 1.5rem; 
+          min-width: 320px; 
+          background: ${colors.bg}; 
+          color: ${colors.text};
+          font-family: system-ui, sans-serif;
+          border-radius: 8px;
+        ` 
+      },
+      h3({ style: "margin-top: 0; margin-bottom: 1.5rem; color: #fff;" }, "User Settings"),
+
+      Row(
+        label("Status:"),
+        select(
+          { style: `background: ${colors.bg}; color: ${colors.text}; border: 1px solid ${colors.border}; padding: 4px;` },
+          option("Online"),
+          option("Idle"),
+          option("Offline")
+        )
+      ),
+
+      Row(
+        label("Theme:"),
+        span({ style: `color: ${colors.accent}; font-weight: bold;` }, "Dark")
+      ),
+
+      Row(
+        label("Network Status:"),
+        button(
+          { 
+            onclick: () => console.log("Toggle network"),
+            style: `background: ${colors.accent}; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;`
+          }, 
+          "Toggle ?"
+        )
+      ),
+
+      div(
+        { style: "display: flex; justify-content: flex-end; margin-top: 2rem;" },
+        button(
+          { 
+            onclick: () => (closed.val = true),
+            style: `background: transparent; color: ${colors.text}; border: 1px solid ${colors.border}; padding: 8px 16px; border-radius: 4px; cursor: pointer;`
+          }, 
+          "Close"
+        )
+      )
+    )
+  );
+}
+
+
 //-----------------------------------------------
 // 
 //-----------------------------------------------
@@ -309,6 +358,11 @@ export function UserPanel() {
 
   function editAvatarImage(){
     van.add(document.body, editAvatarImagePanel());
+  }
+
+  function onClickSettings(){
+    console.log("settings...");
+    van.add(document.body, userSettingsPanel());
   }
 
   const displayName = van.derive(()=>{
@@ -388,6 +442,7 @@ export function UserPanel() {
       ),
       button(
         {
+          onclick: () => onClickSettings(),
           style: `
             background:none;
             border:none;
