@@ -1,7 +1,7 @@
+//-----------------------------------------------
+// 
+//-----------------------------------------------
 
-
-
-// import { DbConnection, tables } from '../module_bindings';
 import { Modal } from "vanjs-ui";
 import van from "vanjs-core";
 import { stateConn, userAvatarUrl, userName, userStatus } from "../../context";
@@ -9,7 +9,7 @@ import { stateConn, userAvatarUrl, userName, userStatus } from "../../context";
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
 //-----------------------------------------------
-// Modal
+// MODAL EDIT USER NAME PANEL
 //-----------------------------------------------
 export function editUserNamePanel(){
   const closed = van.state(false)
@@ -24,17 +24,68 @@ export function editUserNamePanel(){
       console.log("edit name error!");
     }
   }
+
   return Modal({closed},
-    p("Change user name!"),
-    div({style: "display: flex; justify-content: center;"},
-      input({value:editUserName,oninput:e=>editUserName.val=e.target.value}),
-      button({onclick: () => applyEditName()}, " Okay "),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
+    div({style: `
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 1.5rem; 
+      padding: 2rem; 
+      background-color: #1e1e1e; 
+      color: #ffffff;
+      border-radius: 8px;
+      font-family: sans-serif;
+    `},
+      p({style: `margin: 0; font-size: 1.2rem; font-weight: 500;`}, "Change User Name!"),
+      
+      input({
+        value: editUserName,
+        oninput: e => editUserName.val = e.target.value,
+        style: `
+          padding: 10px; 
+          width: 100%; 
+          background: #2d2d2d; 
+          color: white; 
+          border: 1px solid #444; 
+          border-radius: 4px;
+          outline: none;
+        `
+      }),
+
+      // Button container - centered
+      div({style: `display: flex; justify-content: center; gap: 12px; width: 100%;`},
+        button({
+          onclick: () => applyEditName(),
+          style: `
+            padding: 10px 24px; 
+            background: #3d5afe; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+            font-weight: bold;
+          `
+        }, "Okay"),
+        
+        button({
+          onclick: () => closed.val = true,
+          style: `
+            padding: 10px 24px; 
+            background: transparent; 
+            color: #bbb; 
+            border: 1px solid #444; 
+            border-radius: 4px; 
+            cursor: pointer;
+          `
+        }, "Cancel")
+      )
+    )
   )
+
+  // end
 }
-
-
+// EDIT STATUS PANEL
 function editStatusPanel(){
   const closed = van.state(false)
   const editCustomStatus = van.state("");
@@ -51,48 +102,183 @@ function editStatusPanel(){
   }
   
   return Modal({closed},
-    p("Edit status!"),
-    div({style: "display: flex; justify-content: center;"},
-      input({value:editCustomStatus,oninput:e=>editCustomStatus.val=e.target.value}),
-      button({onclick: () => applyEditName()}, " Okay "),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
+    div({style: `
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 1rem; 
+      padding: 24px; 
+      background-color: #1a1a1a; 
+      color: #e0e0e0; 
+      border-radius: 12px;
+      min-width: 300px;
+    `},
+      // Title
+      p({style: `margin: 0; font-size: 1.1rem; font-weight: 600; color: #fff;`}, "Edit Status!"),
+      
+      // Input - Full width with dark styling
+      input({
+        value: editCustomStatus,
+        oninput: e => editCustomStatus.val = e.target.value,
+        placeholder: "What's happening?",
+        style: `
+          width: 100%; 
+          padding: 12px; 
+          background: #2a2a2a; 
+          color: white; 
+          border: 1px solid #444; 
+          border-radius: 6px;
+          box-sizing: border-box;
+        `
+      }),
+
+      // Button Row - Centered
+      div({style: `display: flex; gap: 10px; justify-content: center; width: 100%;`},
+        button({
+          onclick: () => applyEditName(),
+          style: `
+            flex: 1;
+            max-width: 100px;
+            padding: 10px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: bold;
+          `
+        }, "Okay"),
+        
+        button({
+          onclick: () => closed.val = true,
+          style: `
+            flex: 1;
+            max-width: 100px;
+            padding: 10px; 
+            background: #333; 
+            color: #ccc; 
+            border: 1px solid #444; 
+            border-radius: 6px; 
+            cursor: pointer;
+          `
+        }, "Cancel")
+      )
+    )
   )
+
+  // end
 }
 // van.add(document.body, editStatusPanel());
 
-function editAvatarImagePanel(){
-  const closed = van.state(false)
-  const el_file = input({type:'file'})
-  async function upload_file(event){
-    // console.log(event);
+// function editAvatarImagePanel(){
+//   const closed = van.state(false)
+//   const el_file = input({type:'file'})
+//   async function upload_file(event){
+//     // console.log(event);
+//     const file = el_file.files[0];
+//     // console.log(file);
+//     // console.log(file.type);
+//     const arrayBuffer = await file.arrayBuffer();
+//     const fileBytes = new Uint8Array(arrayBuffer);
+//     // console.log(arrayBuffer);
+//     try {
+//       const conn = stateConn.val;
+//       await conn.reducers.uploadAvatar({
+//         userId:BigInt(1),
+//         mimeType:file.type,
+//         data:fileBytes
+//       });  
+//       console.log("pass!");
+//       closed.val = true;
+//     } catch (error) {
+//       console.log("upload failed!", error.message);
+//     }
+//   }
+//   return Modal({closed},
+//     p("Edit Upload Image"),
+//     img({width:48,height:48}),//preview image
+//     p("(48x48)"),
+//     div({style: "display: flex; justify-content: center;"},
+//       el_file,
+//       button({onclick:upload_file}, "Upload File"),
+//       button({onclick: () => closed.val = true}, "Cancel"),
+//     ),
+//   )
+// }
+
+function editAvatarImagePanel() {
+  const closed = van.state(false);
+  const previewSrc = van.state(""); // State for preview
+  const el_file = input({
+    type: 'file',
+    accept: "image/*",
+    style: "display: none;", // Hide the ugly default input
+    onchange: (e) => {
+      const file = e.target.files[0];
+      if (file) previewSrc.val = URL.createObjectURL(file);
+    }
+  });
+
+  async function upload_file() {
     const file = el_file.files[0];
-    // console.log(file);
-    // console.log(file.type);
+    if (!file) return alert("Please select a file first!");
+    
     const arrayBuffer = await file.arrayBuffer();
     const fileBytes = new Uint8Array(arrayBuffer);
-    // console.log(arrayBuffer);
     try {
       const conn = stateConn.val;
       await conn.reducers.uploadAvatar({
-        userId:BigInt(1),
-        mimeType:file.type,
-        data:fileBytes
-      });  
-      console.log("pass!");
+        userId: BigInt(1),
+        mimeType: file.type,
+        data: fileBytes
+      });
       closed.val = true;
     } catch (error) {
-      console.log("upload failed!", error.message);
+      console.error("upload failed!", error.message);
     }
   }
 
   return Modal({closed},
-    p("Edit Upload Image 48x48!"),
-    div({style: "display: flex; justify-content: center;"},
-      el_file,
-      button({onclick:upload_file}, "Upload File"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
+    div({style: `
+      display: flex; flex-direction: column; align-items: center; 
+      gap: 1.2rem; padding: 2rem; background: #1a1a1a; 
+      color: white; border-radius: 12px; min-width: 280px;
+    `},
+      p({style: "margin: 0; font-weight: bold;"}, "Update Avatar"),
+      
+      // Image Preview Circle
+      img({
+        src: previewSrc, 
+        style: `
+          width: 80px; height: 80px;
+          background: #333; border: 2px solid #444;
+        `,
+        // Fallback placeholder if no image selected
+        onerror: e => e.target.src = userAvatarUrl.val ?? ""
+      }),
+      
+      p({style: "font-size: 0.8rem; color: #888; margin: 0;"}, "Recommended: 48x48px"),
+
+      // Hidden file input triggered by this button
+      button({
+        onclick: () => el_file.click(),
+        style: "padding: 8px 16px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer;"
+      }, "Select Image"),
+
+      el_file, // Hidden element
+
+      // Action Buttons
+      div({style: "display: flex; gap: 10px; justify-content: center; width: 100%;"},
+        button({
+          onclick: upload_file,
+          style: "flex: 1; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;"
+        }, "Upload"),
+        button({
+          onclick: () => closed.val = true,
+          style: "flex: 1; padding: 10px; background: transparent; color: #888; border: 1px solid #444; border-radius: 6px; cursor: pointer;"
+        }, "Cancel")
+      )
+    )
   )
 }
 

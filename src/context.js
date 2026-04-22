@@ -16,4 +16,3 @@ export const dbUsers = van.state(new Map());
 export const dbGroupChats = van.state(new Map());
 export const dbContacts = van.state(new Map());
 
-

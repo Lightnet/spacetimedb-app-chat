@@ -20,7 +20,7 @@ export const get_avatar = spacetimedb.procedure(
   let file = ctx.withTx(ctx => {
     const user = ctx.db.users.identity.find(ctx.sender);
     if(user){
-      const user_avatar = ctx.db.userAvatars.userId.find(user.id);
+      const user_avatar = ctx.db.userAvatars.userId.find(user.userId);
       // console.log("user id exist:", user_avatar?.userId);
       if(user_avatar){
         // data = user_avatar.data;

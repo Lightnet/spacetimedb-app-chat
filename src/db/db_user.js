@@ -34,7 +34,13 @@ export function setUpDBUser(){
       // console.log("found current ID:", conn.identity.toHexString());
       // console.log("Name: ",row.name)
       userName.val = row.name ?? 'Uknown';
-      userStatus.val = row.customStatus ?? 'Idle';
+      let currentStatus = "";
+      if(row.customStatus && row.customStatus != ""){
+        currentStatus = row.customStatus
+      }else{
+        currentStatus = row.status.tag;
+      }
+      userStatus.val = currentStatus;
       userId.val = row.userId;
       console.log("row.userId: ", row.userId);
     }
@@ -48,7 +54,15 @@ export function setUpDBUser(){
       // console.log("found current ID:", conn.identity.toHexString());
       // console.log("Name: ",newRow.name)
       userName.val = newRow.name ?? 'Uknown';
-      userStatus.val = newRow.customStatus ?? 'Idle';
+      let currentStatus = "";
+      if(row.customStatus && row.customStatus != ""){
+        currentStatus = row.customStatus
+      }else{
+        currentStatus = row.status.tag;
+      }
+      console.log("currentStatus: ",currentStatus);
+      userStatus.val = currentStatus;
+      // userStatus.val = newRow.customStatus ?? 'Idle';
     }
     addOrUpdateUser(newRow);
   });

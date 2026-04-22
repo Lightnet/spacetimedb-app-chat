@@ -70,8 +70,7 @@ export function groupChatList(){
 
   const groups = van.derive(()=>{
     const chats = Array.from(dbGroupChats.val.values());
-    console.log(chats);
-
+    // console.log(chats);
     return div(
       chats.map(group => div({id:'group-chat-'+group.id},
         label("[ "+group.name+" ]"),

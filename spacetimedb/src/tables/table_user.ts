@@ -9,11 +9,9 @@ export const users = table(
     public: true,
   },
   {
-    id:t.u64().autoInc(),
-    identity: t.identity().primaryKey(),
-    userId: t.string().unique(),
-    name: t.string().optional(), // user name
-    // status: t.enum(['online', 'idle', 'dnd', 'offline']).default('offline'), 
+    userId: t.string().primaryKey(),
+    identity: t.identity().unique(),// token 
+    name: t.string().unique(), // user name
     status: status,
     custom_status:t.string().optional(), // current status custom text
     // bio: t.string().optional(), // user info

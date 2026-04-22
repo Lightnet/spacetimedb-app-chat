@@ -20,15 +20,16 @@ function displayAvatar(bytes, mimeType) {
 //-----------------------------------------------
 // LOAD AVATAR IMAGE
 //-----------------------------------------------
-export function setupDataBaseAvatar(){
+export function setupDBImageAvatar(){
   // user avatar image listen
+  // console.log("setupDBImageAvatar")
   const conn = stateConn.val;
   conn
     .subscriptionBuilder()
     .subscribe(tables.user_current_avatar);
   // current user avatar image
   conn.db.user_current_avatar.onInsert((ctx, row)=>{
-    // console.log(row);
+    // console.log("user_current_avatar: ",row);
     displayAvatar(row.data, row.type);
-  })
+  });
 }

@@ -4,14 +4,15 @@ import spacetimedb, {init , onConnect, onDisconnect} from './module';
 
 import { 
   set_name,
-  set_custom_status, 
-  upload_avatar,
+  set_custom_status,
 } from './reducers/reducer_user';
 
 import {
   user_current_avatar,
   current_user
 } from './views/view_user';
+
+import { upload_avatar } from './reducers/reducer_image';
 
 import { 
   add_contact,

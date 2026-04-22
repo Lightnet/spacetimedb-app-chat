@@ -4,8 +4,8 @@ import spacetimedb from "../module";
 // import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 import { bytesToHex, bytesToUtf8, hexToBytes } from "@noble/ciphers/utils.js";
 import { scryptAsync } from "@noble/hashes/scrypt.js";
-import { randomBytes } from '@noble/hashes/utils.js';
-import { utf8ToBytes } from '@noble/hashes/utils.js'; // or use TextEncoder/Decoder
+// import { randomBytes } from '@noble/hashes/utils.js';
+// import { utf8ToBytes } from '@noble/hashes/utils.js'; // or use TextEncoder/Decoder
 
 // Helper: Generate random bytes using SpaceTimeDB's deterministic RNG
 function getRandomBytes(ctx: any, length: number): Uint8Array {
@@ -35,8 +35,7 @@ export const test_c = spacetimedb.reducer(
   {  },
   async (ctx, {  }) => {
     console.log("END")
-  })
-
+});
 
 export const test_id = spacetimedb.reducer(
   {  },
@@ -65,8 +64,6 @@ export const test_random = spacetimedb.reducer(
     
   }
 )
-
-
 
 // Parameters (tune these based on your security/performance needs)
 // Higher values = more secure but slower
@@ -118,8 +115,6 @@ export const test_salt = spacetimedb.reducer(
       const wrongPass = await verifyPassword('wrong-password', hashed);
       console.log('Wrong password accepted?', wrongPass);
 
-
-      
     } catch (error) {
       console.log("error: ", error);
     }

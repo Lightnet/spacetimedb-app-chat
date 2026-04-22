@@ -69,13 +69,15 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
   console.log("SENDER: ",ctx.sender.toHexString());
   console.log(ctx.random())
   if (user) {
-    ctx.db.users.identity.update({ ...user, online: true });
+    ctx.db.users.userId.update({ 
+      ...user, 
+      online: true,
+    });
   } else {
     // let generateName = generateRandomString(ctx,12);
     let generateName = String(ctx.newUuidV7()).replaceAll("-","");
     ctx.db.users.insert({
       identity: ctx.sender,
-      id: 0n,
       userId: generateName,
       name: generateName,
       online: true,
@@ -104,7 +106,7 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
 export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
   const user = ctx.db.users.identity.find(ctx.sender);
   if (user) {
-    ctx.db.users.identity.update({ 
+    ctx.db.users.userId.update({ 
       ...user, 
       online: false ,
       status: {tag:"Offline"},
