@@ -16,6 +16,7 @@ import {
 import { 
   add_contact,
   add_contact_id,
+  remove_contact_id,
   // remove_contact,
   // block_contact,
 } from './reducers/reducer_contact';
@@ -62,6 +63,7 @@ export {
   upload_avatar,
   add_contact,
   add_contact_id,
+  remove_contact_id,
   view_contact,
   //
   send_message, // test

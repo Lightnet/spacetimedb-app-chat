@@ -1,9 +1,6 @@
-// Model contact for tables
+// table contact
 
 import { table, t } from 'spacetimedb/server';
-// import { status } from '../types';
-
-
 
 export const contact = table(
   { 

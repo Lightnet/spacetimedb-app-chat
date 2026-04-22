@@ -3,8 +3,17 @@
 // 
 import { DbConnection, tables } from './module_bindings';
 import van from "vanjs-core";
-import { networkStatus, userIdentity, userName, userStatus, userAvatarUrl, connState, userId } from './context.js';
+import { networkStatus, userIdentity, userName, userStatus, userAvatarUrl, stateConn, userId } from './context.js';
 import { Modal } from "vanjs-ui";
+import { setUpDBUser } from './db/db_user.js';
+import { setupDataBaseAvatar } from './db/db_image.js';
+import { STDBPanel } from './components/spacetimedb/stdboanel.js';
+import { ChatWindow } from './components/chat/window_chat.js';
+import { editUserNamePanel, UserPanel } from './components/user/user.js';
+import { groupChatCreate, groupChatList } from './components/groupchat/groupchat.js';
+import { setupDBGroupChat } from './db/db_groupchat.js';
+import { setupDBContact } from './db/db_contact.js';
+import { contactAdd, contactList } from './components/contact/contact.js';
 
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
@@ -33,7 +42,7 @@ const conn = DbConnection.builder()
   .onConnect((conn, identity, token) => {
     localStorage.setItem(TOKEN_KEY, token);
     networkStatus.val = 'Connected';
-    connState.val = conn;
+    stateConn.val = conn;
     // console.log("identity: ", identity);
     console.log("identity: ", identity.toHexString());
     // console.log("conn: ", conn);
@@ -64,166 +73,26 @@ function initDB(){
   // test_db();
 }
 
-function setUpDBUser(){
-  conn
-    .subscriptionBuilder()
-    .onError((ctx, error) => {
-      console.error(`Subscription failed: ${error}`);
-    })
-    .subscribe(tables.current_user);
-
-  conn.db.current_user.onInsert((ctx, row)=>{
-    // console.log('insert current user row');
-    // console.log(row);
-    if(row.identity.toHexString() == conn.identity.toHexString()){
-      // console.log("found current ID:", conn.identity.toHexString());
-      // console.log("Name: ",row.name)
-      userName.val = row.name ?? 'Uknown';
-      userStatus.val = row.customStatus ?? 'Idle';
-      userId.val = row.userId;
-      console.log("row.userId: ", row.userId);
-    }
-  });
-
-  conn.db.current_user.onUpdate((ctx, oldRow, newRow)=>{
-    // console.log('insert current user row');
-    // console.log(newRow);
-    if(newRow.identity.toHexString() == conn.identity.toHexString()){
-      // console.log("found current ID:", conn.identity.toHexString());
-      // console.log("Name: ",newRow.name)
-      userName.val = newRow.name ?? 'Uknown';
-      userStatus.val = newRow.customStatus ?? 'Idle';
-    }
-  });
-}
-//-----------------------------------------------
-// CREATE IMAGE AND LOAD TMP URL OBJECT
-//-----------------------------------------------
-function displayAvatar(bytes, mimeType) {
-  // 1. Create a Blob from the Uint8Array and the stored MIME type
-  const blob = new Blob([bytes], { type: mimeType });
-  // 2. Generate a temporary URL for the browser
-  const imageUrl = URL.createObjectURL(blob);
-  // 3. Set it as an <img> source
-  // document.getElementById('avatarDisplay').src = imageUrl;
-  // avatar_image.src = imageUrl;
-  // console.log(imageUrl);
-  userAvatarUrl.val = imageUrl;
-}
-//-----------------------------------------------
-// LOAD AVATAR IMAGE
-//-----------------------------------------------
-function setupDataBaseAvatar(){
-  // user avatar image listen
-  conn
-    .subscriptionBuilder()
-    .subscribe(tables.user_current_avatar);
-  // current user avatar image
-  conn.db.user_current_avatar.onInsert((ctx, row)=>{
-    // console.log(row);
-    displayAvatar(row.data, row.type);
-  })
-}
-
 //-----------------------------------------------
 // CONTACT
 //-----------------------------------------------
-function delete_contact_id(id){
+// function delete_contact_id(id){
 
-}
+// }
 
-function update_contact(row){
-  const groupChatElId = document.getElementById('contact-'+row.id);
-  if(groupChatElId){
-    groupChatElId.remove();
-  }
-  van.add(groupChatEl, div({id:'contact-'+row.id},
-    label(" [ ID:"+ row.userId + " ] "),
-    span(' '),
-    button({onclick:()=>delete_contact_id(row.id)},'[ Delete ]')
-  ))
-}
+// function update_contact(row){
+//   const groupChatElId = document.getElementById('contact-'+row.id);
+//   if(groupChatElId){
+//     groupChatElId.remove();
+//   }
+//   van.add(groupChatEl, div({id:'contact-'+row.id},
+//     label(" [ ID:"+ row.userId + " ] "),
+//     span(' '),
+//     button({onclick:()=>delete_contact_id(row.id)},'[ Delete ]')
+//   ))
+// }
 
 
-function setupDBContact(){
-  conn
-    .subscriptionBuilder()
-    .onError((ctx, error) => {
-      console.error(`Subscription failed: ${error}`);
-    })
-    .onApplied((ctx)=>{
-      // ctx.
-      // console.log(ctx);
-    })
-    .subscribe(tables.view_contact);
-
-  conn.db.view_contact.onInsert((ctx, row)=>{
-    console.log("Contact Added...", row);
-    update_contact(row);
-  });
-}
-
-//-----------------------------------------------
-// GROUP CHAT
-//-----------------------------------------------
-function delete_group_chat_id(id){
-  conn.reducers.deleteGroupChat({
-    id:id
-  })
-}
-// need to fixed this later? in case of refresh accident delete group chat
-function updateGroupChat(row){
-  const groupChatElId = document.getElementById('group-chat-'+row.id);
-  if(groupChatElId){
-    groupChatElId.remove();
-  }
-  van.add(groupChatEl, div({id:'group-chat-'+row.id},
-    label(" [ "+ row.name + " ] "),
-    button({onclick:()=>setupChatPanel(row.id, row.name)},'[ Join ]'),
-    span(' '),
-    button({onclick:()=>delete_group_chat_id(row.id)},'[ Delete ]')
-  ))
-}
-
-function deleteGroupChat(row){
-  const groupChatElId = document.getElementById('group-chat-'+row.id);
-  if(groupChatElId){
-    groupChatElId.remove();
-  }
-}
-
-function setupDBGroupChat(){
-  conn
-    .subscriptionBuilder()
-    .subscribe(tables.groupChat);
-
-  conn.db.groupChat.onInsert((ctx, row)=>{
-    // console.log("Group Chat");
-    // console.log(row);
-    // displayAvatar(row.data, row.type);
-    updateGroupChat(row)
-  })
-
-  conn.db.groupChat.onDelete((ctx, row)=>{
-    console.log("Delete Group Chat");
-    console.log(row);
-    // displayAvatar(row.data, row.type);
-    deleteGroupChat(row)
-  })
-
-  // const groupMsgSub = conn
-  //   .subscriptionBuilder()
-  //   .onApplied((ctx)=>{
-  //     console.log("my_group_chat_messages filter?")
-  //     // ctx.db.groupChatMessage.onInsert((_ctx, row)=>{
-  //     //   console.log("groupMessage row", row);
-  //     // });
-  //   })
-  //   .onError((ctx, error) => {
-  //     console.error(`Subscription failed: ${error}`);
-  //   })
-  //   .subscribe(tables.my_group_chat_messages);
-}
 
 //-----------------------------------------------
 // MESSAGE
@@ -236,290 +105,6 @@ const Message = ({side, name, text}) => div(
 //-----------------------------------------------
 // PUBLIC CHAT WINDOW
 //-----------------------------------------------
-function ChatWindow() {
-  const closed = van.state(false);
-  const messageInput = van.state("");
-  const closeMesage = van.state(false);
-  const messages = van.state([
-    // { side: "received", name: "Steam", text: "Welcome to the black edition chatroom." },
-    // { side: "sent",     name: "You",   text: "yo, any drops today?" },
-    // { side: "received", name: "Steam", text: "Soon™" },
-  ]);
-  let messageSub = null;
-  // let connMessage = null;
-
-
-  function sendMessage() {
-    const text = messageInput.val.trim();
-    if (!text) return;
-    // messages.val = [...messages.val, { side: "sent", name: "You", text }];
-    messageInput.val = "";
-    conn.reducers.sendMessage({
-      text:text
-    });
-  }
-
-  function update_message(ctx, row){
-    if(closeMesage.val == true){
-      console.log("close chat...");
-      return;
-    }
-    let side = '';
-    console.log(row)
-    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-      // console.log("FOUND USER???");
-      side = "sent";
-    }
-    messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
-  }
-
-// https://spacetimedb.com/docs/clients/subscriptions/
-  function setUpConnChat(){
-    //create subscription
-    messageSub = conn
-      .subscriptionBuilder()
-      .onApplied((ctx)=>{
-        // connMessage = ctx;
-        ctx.db.message.onInsert(update_message);
-      })
-      .onError((ctx, error) => {
-        console.error(`Subscription failed: ${error}`);
-      })
-      .subscribe(tables.message);
-    console.log(messageSub);
-  }
-
-  function onKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  //scroll
-  van.derive(()=>{
-    messages.val;
-    setTimeout(()=>{
-      const container = document.getElementById('messages');
-      if (container) {
-        container.scrollTop = container.scrollHeight
-      }
-    },50);
-  });
-
-  van.derive(()=>{
-    console.log("group chat closed: ", closed.val);
-    if(closed.val == true){
-      console.log(messageSub);
-      if(messageSub != null){
-        if(messageSub.isActive){
-          // remove callback function
-          conn.db.message.removeOnInsert(update_message);
-          // subscription remove table listen
-          messageSub.unsubscribe();
-        }
-      }
-    }
-  })
-
-  // watch change to update render
-  const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
-
-  // Create the window element
-  const windowEl = div({class: "window"},
-    div({class: "titlebar"},
-      div({class: "title"}, "Black Chat — Public"),
-      div({class: "titlebar-controls"},
-        button("_"),
-        button("□"),
-        button({onclick:()=>closed.val=true,class: "close"}, "×"),
-      )
-    ),
-
-    div({id:"messages",class: "chat-messages"},
-      messageElements
-    ),
-
-    div({class: "input-area"},
-      textarea({
-        class: "message-input",
-        value: messageInput,
-        oninput: e => messageInput.val = e.target.value,
-        onkeydown: onKeyDown,
-        placeholder: "Type a message…",
-        rows: "1",
-        autofocus: true,
-      }),
-      button({class: "send-btn", onclick: sendMessage}, "Send")
-    )
-  );
-
-  // Make it draggable
-  windowEl.addEventListener("mousedown", (e) => {
-    if (!e.target.closest(".titlebar")) return;
-    if (e.target.closest("button")) return;
-
-    const win = e.currentTarget;
-    let shiftX = e.clientX - win.getBoundingClientRect().left;
-    let shiftY = e.clientY - win.getBoundingClientRect().top;
-
-    function moveAt(pageX, pageY) {
-      win.style.left = pageX - shiftX + "px";
-      win.style.top  = pageY - shiftY + "px";
-    }
-
-    function onMouseMove(e) {
-      moveAt(e.clientX, e.clientY);
-    }
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", () => {
-      document.removeEventListener("mousemove", onMouseMove);
-    }, {once: true});
-  });
-
-  setUpConnChat();
-  return ()=> closed.val ? null : windowEl;
-}
-
-function groupChatWindow(groupId, name){
-  const closed = van.state(false);
-  const groupChatName = van.state(name);
-  const messageInput = van.state("");
-  const messages = van.state([]);
-  let groupMsgSub = null;
-
-  function sendMessage() {
-    const text = messageInput.val.trim();
-    if (!text) return;
-    // messages.val = [...messages.val, { side: "sent", name: "You", text }];
-    messageInput.val = "";
-    // conn.reducers.sendMessage({
-    //   text:text
-    // });
-    console.log("groupId: ", groupId);
-    conn.reducers.sendGroupChatMessage({
-      id:groupId,
-      content:text
-    });
-  }
-
-  function update_messages(ctx, row){
-    let side = '';
-    console.log("group msg...");
-    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
-      // console.log("FOUND USER???");
-      side = "sent";
-    }
-    messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
-  }
-
-  function setUpConnChat(){
-    //create subscription to unsubscribe.
-    conn.reducers.setGroupChatId({id:groupId});
-
-    groupMsgSub = conn
-      .subscriptionBuilder()
-      .onApplied((ctx)=>{
-        // ctx.db.groupChatMessage.onInsert((ctx, row)=>{
-        ctx.db.current_group_chat_messages.onInsert(update_messages);
-      })
-      .onError((ctx, error) => {
-        console.error(`Subscription failed: ${error}`);
-      })
-      // .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
-      .subscribe(tables.current_group_chat_messages);
-  }
-
-  function onKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  //scroll
-  van.derive(()=>{
-    messages.val;
-    setTimeout(()=>{
-      const container = document.getElementById(groupId);
-      if (container) {
-        container.scrollTop = container.scrollHeight
-      }
-    },50);
-  });
-  // This will handle the table to unsubscribe. To stop listen table.
-  van.derive(()=>{
-    console.log("group chat closed: ", closed.val);
-    if(closed.val == true){
-      console.log(groupMsgSub);
-      if(groupMsgSub.isActive){
-        // since it view it need main connector client
-        conn.db.current_group_chat_messages.removeOnInsert(update_messages)
-        groupMsgSub.unsubscribe();
-      }
-    }
-  })
-
-  // watch change to update render
-  const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
-
-  // Create the window element
-  const windowEl = div({class: "window"},
-    div({class: "titlebar"},
-      div({class: "title"}, `${groupChatName.val} - Group Chat`),
-      div({class: "titlebar-controls"},
-        button("_"),
-        button("□"),
-        button({onclick:()=>closed.val=true ,class: "close"}, "×"),
-      )
-    ),
-
-    div({id:groupId,class: "chat-messages"},
-      messageElements
-    ),
-
-    div({class: "input-area"},
-      textarea({
-        class: "message-input",
-        value: messageInput,
-        oninput: e => messageInput.val = e.target.value,
-        onkeydown: onKeyDown,
-        placeholder: "Type a message…",
-        rows: "1",
-        autofocus: true,
-      }),
-      button({class: "send-btn", onclick: sendMessage}, "Send")
-    )
-  );
-
-  // Make it draggable
-  windowEl.addEventListener("mousedown", (e) => {
-    if (!e.target.closest(".titlebar")) return;
-    if (e.target.closest("button")) return;
-
-    const win = e.currentTarget;
-    let shiftX = e.clientX - win.getBoundingClientRect().left;
-    let shiftY = e.clientY - win.getBoundingClientRect().top;
-
-    function moveAt(pageX, pageY) {
-      win.style.left = pageX - shiftX + "px";
-      win.style.top  = pageY - shiftY + "px";
-    }
-
-    function onMouseMove(e) {
-      moveAt(e.clientX, e.clientY);
-    }
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", () => {
-      document.removeEventListener("mousemove", onMouseMove);
-    }, {once: true});
-  });
-
-  setUpConnChat();
-  return ()=> closed.val ? null : windowEl;
-}
 
 function onTest(){
   console.log("test");
@@ -529,27 +114,27 @@ function onTest(){
   conn.reducers.testSalt()
 }
 
-function contactAdd(){
-  const closed = van.state(false);
-  const contactId = van.state('');
+// function contactAdd(){
+//   const closed = van.state(false);
+//   const contactId = van.state('');
 
-  function create_group(){
-    console.log("create : ", contactId.val);
-    conn.reducers.addContact({
-      id:contactId.val
-    })
-  }
+//   function create_group(){
+//     console.log("create : ", contactId.val);
+//     conn.reducers.addContact({
+//       id:contactId.val
+//     })
+//   }
 
-  return Modal({closed, },
-    p({style:`background-color:black;`},"Add Contact:"),
-    div({style: "display: flex; justify-content: center;background-color:black;"},
-      label('Name: '), input({value:contactId.val, oninput:e=>contactId.val=e.target.value}),
-      button({onclick:create_group}, "Create"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
-  )
+//   return Modal({closed, },
+//     p({style:`background-color:black;`},"Add Contact:"),
+//     div({style: "display: flex; justify-content: center;background-color:black;"},
+//       label('Name: '), input({value:contactId.val, oninput:e=>contactId.val=e.target.value}),
+//       button({onclick:create_group}, "Create"),
+//       button({onclick: () => closed.val = true}, "Cancel"),
+//     ),
+//   )
 
-}
+// }
 
 //-----------------------------------------------
 // 
@@ -617,12 +202,14 @@ function App() {
         van.add(document.body, groupChatCreate());
       }},"+"),
       // div("test"),
-      groupChatEl,
+      // groupChatEl,
+      groupChatList(),
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       button({},"Contact"),button({onclick:()=>{
         van.add(document.body, contactAdd());
       }},"+"),
-      contactEl,
+      // contactEl,
+      contactList(),
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       button({onclick:onTest},'Test'),
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
@@ -657,162 +244,7 @@ function App() {
     )
   );
 }
-//-----------------------------------------------
-// 
-//-----------------------------------------------
-function UserPanel() {
-  // You would normally pull these from state / props / WebRTC / server
-  // const username = "Guest";           // ← replace with real data
-  // const avatarUrl = "";  // ← real avatar
-  const isMuted   = van.state(false);
-  const isDeafened = van.state(false);
 
-  function toggle_mic(){
-    isMuted.val = !isMuted.val
-    console.log(isMuted.val);
-  }
-
-  function editName(){
-    console.log("edit name???");
-    van.add(document.body, editUserNamePanel());
-  }
-
-  function editStatus(){
-    console.log("edit Status???");
-    van.add(document.body, editStatusPanel());
-  }
-
-  function editAvatarImage(){
-    van.add(document.body, editAvatarImagePanel());
-  }
-
-  const displayName = van.derive(()=>{
-    // console.log("userName.val:", userName.val);
-    return userName.val;
-  });
-
-  return div(
-    {
-      style: `
-        position: fixed;
-        bottom: 8px;
-        left: 8px;
-        width: 280px;
-        height: 60px;
-        background: #2f3136;          /* Discord dark gray */
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-        color: #dcddde;
-        font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        padding: 0 12px;
-        user-select: none;
-        z-index: 9999;
-      `
-    },
-    // Avatar + name section (left)
-    div(
-      { style: "display:flex; align-items:center; gap:10px; flex:1;" },
-      img({
-        onclick:editAvatarImage,
-        // src: userAvatarUrl.val,
-        src: userAvatarUrl,
-        width: "40",
-        height: "40",
-        style: "border-radius:50%; object-fit:cover;"
-      }),
-      div(
-        { style: "display:flex; flex-direction:column;" },
-        label({onclick:()=>editName(),style: "font-weight:600;" }, displayName),
-        // label({onclick:()=>editStatus(), style: "font-size:12px; color:#b9bbbe;" }, "idle msg")
-        label({onclick:()=>editStatus(), style: "font-size:12px; color:#b9bbbe;" }, userStatus)
-      )
-    ),
-    // Controls (right) - mic, headset, settings
-    div(
-      { style: "display:flex; gap:12px;" },
-      button(
-        {
-          // onclick: () => isMuted.val = !isMuted.val,
-          onclick: () => toggle_mic(),
-          style: `
-            background:none;
-            border:none;
-            color:${()=>isMuted.val ? "#f23f42" : "#b9bbbe"};
-            font-size:20px;
-            cursor:pointer;
-            padding:4px;
-          `
-        },
-        ()=> isMuted.val ? "🔇" : "🎤"   // or use real icons/SVGs
-      ),
-      button(
-        {
-          onclick: () => isDeafened.val = !isDeafened.val,
-          style: `
-            background:none;
-            border:none;
-            color:${()=> isDeafened.val ? "#f23f42" : "#b9bbbe"};
-            font-size:20px;
-            cursor:pointer;
-            padding:4px;
-          `
-        },
-        ()=> isDeafened.val ? "🙉" : "🎧"
-      ),
-      button(
-        {
-          style: `
-            background:none;
-            border:none;
-            color:#b9bbbe;
-            font-size:20px;
-            cursor:pointer;
-            padding:4px;
-          `
-        },
-        "⚙️"   // settings gear
-      )
-    )
-  );
-}
-//-----------------------------------------------
-// 
-//-----------------------------------------------
-// testing if network is connected.
-function STDBPanel(){
-
-  return div({
-    style: `
-      position: fixed;
-      top: 8px;
-      right: 8px;
-      width: 280px;
-      height: 60px;
-      background: #2f3136;          /* Discord dark gray */
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-      color: #dcddde;
-      font-family: 'gg sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      user-select: none;
-      z-index: 9999;
-    `
-  },
-  div({ style: "display:flex; flex-direction:column;" },
-    label({style:"font-weight:600;" }, "Network: ", networkStatus)
-  ),
-  // div({ style: "display:flex; gap:12px;" },
-  //   label({style:"" }, " [test] ")
-  // )
-
-  )
-}
 
 //-----------------------------------------------
 // Add Body
@@ -824,142 +256,6 @@ van.add(document.body, App());
 van.add(document.body, UserPanel());
 van.add(document.body, STDBPanel());
 
-//-----------------------------------------------
-// Modal
-//-----------------------------------------------
-function editUserNamePanel(){
-  const closed = van.state(false)
-  const editUserName = van.state("");
-  function applyEditName(){
-    try {
-      // console.log("Set Name:", editUserName.val);
-      conn.reducers.setName({name:editUserName.val});
-      closed.val = true;
-    } catch (error) {
-      console.log("edit name error!");
-    }
-  }
-  return Modal({closed},
-    p("Change user name!"),
-    div({style: "display: flex; justify-content: center;"},
-      input({value:editUserName,oninput:e=>editUserName.val=e.target.value}),
-      button({onclick: () => applyEditName()}, " Okay "),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
-  )
-}
-
-function editStatusPanel(){
-  const closed = van.state(false)
-  const editCustomStatus = van.state("");
-  function applyEditName(){
-    try {
-      // console.log("Set Name:", editCustomStatus.val);
-      console.log(conn.reducers);
-      conn.reducers.setCustomStatus({text:editCustomStatus.val});
-      closed.val = true;
-    } catch (error) {
-      console.log("edit name error!");
-    }
-  }
-  
-  return Modal({closed},
-    p("Edit status!"),
-    div({style: "display: flex; justify-content: center;"},
-      input({value:editCustomStatus,oninput:e=>editCustomStatus.val=e.target.value}),
-      button({onclick: () => applyEditName()}, " Okay "),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
-  )
-}
-// van.add(document.body, editStatusPanel());
-
-function editAvatarImagePanel(){
-  const closed = van.state(false)
-  const el_file = input({type:'file'})
-  async function upload_file(event){
-    // console.log(event);
-    const file = el_file.files[0];
-    // console.log(file);
-    // console.log(file.type);
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBytes = new Uint8Array(arrayBuffer);
-    // console.log(arrayBuffer);
-    try {
-      conn.reducers.uploadAvatar({
-        userId:BigInt(1),
-        mimeType:file.type,
-        data:fileBytes
-      });  
-      console.log("pass!");
-      closed.val = true;
-    } catch (error) {
-      console.log("upload failed!");
-    }
-  }
-
-  return Modal({closed},
-    p("Edit Upload Image 48x48!"),
-    div({style: "display: flex; justify-content: center;"},
-      el_file,
-      button({onclick:upload_file}, "Upload File"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
-  )
-}
-
-function groupChatCreate(){
-  const closed = van.state(false);
-  const groupName = van.state('');
-
-  function create_group(){
-    console.log("create : ", groupName.val);
-    conn.reducers.createGroupChat({
-      name:groupName.val,
-      content:"None"
-    });
-  }
-
-  return Modal({closed, },
-    p({style:`background-color:black;`},"Name the Group Chat:"),
-    div({style: "display: flex; justify-content: center;background-color:black;"},
-       label('Group Name: '), input({value:groupName.val, oninput:e=>groupName.val=e.target.value}),
-      button({onclick:create_group}, "Create"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
-  )
-
-}
-
-function groupChatPanel(id){
-  const closed = van.state(false);
-  const groupChatId = van.state(id);
-  const message = van.state('');
-
-  function send_msg(){
-    console.log(groupChatId.val);
-    conn.reducers.sendGroupChatMessage({
-      id:id,
-      content:message.val
-    });
-  }
-
-  return Modal({closed, id:id },
-    p({style:`background-color:black;`},"Name the Group Chat:"),
-    div({style: "display: flex; justify-content: center;background-color:black;"},
-       label('Message: '), input({value:message.val, oninput:e=>message.val=e.target.value}),
-      button({onclick:send_msg}, "Send"),
-      button({onclick: () => closed.val = true}, "Cancel"),
-    ),
-  )
-
-}
-
-function setupChatPanel(id, name){
-  // groupChatPanel
-  van.add(document.body, groupChatWindow(id, name));
-}
-
 // van.add(document.body, editAvatarImagePanel());
 
 // conn.subscriptionBuilder().subscribe(
@@ -970,8 +266,3 @@ function setupChatPanel(id, name){
 // tables.groupMessage.groupId
 // console.log(tables.groupMessage);
 // console.log(tables.groupMessage.where(r=>r.groupId.eq(id)))
-
-function test_db(){
-
-}
-

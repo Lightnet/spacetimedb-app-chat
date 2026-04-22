@@ -17,31 +17,30 @@
 - vite 8.0.0
 
 # Features:
-- upload image ( buffer )
-- get image ( two method procedure or view)
-- user ( simple account no password)
-  - edit name
-  - edit status
-  - edit bio
-- message (simple message)
-- direct message ( wip )
-- simple chat ui ( wip )
-- group chat ( wip )
-  - group name
-  - group config
-  - group member
-  - group message
-- notifications
- - friend online / offline
- - new message ?
- - dm message ?
- - report alert ?
- - update information
- - server boardcast message
+- [ ] upload image ( buffer )
+- [ ] get image ( two method procedure or view)
+- [ ] user ( simple account no password)
+  - [ ] edit name
+  - [ ] edit status
+  - [ ] edit bio
+- [ ] message (simple message)
+- [ ] direct message ( wip )
+- [ ] simple chat ui ( wip )
+- [ ] group chat ( wip )
+  - [ ] group name
+  - [ ] group config
+  - [ ] group member
+  - [ ] group message
+- [ ] notifications
+ - [ ] friend online / offline
+ - [ ] new message ?
+ - [ ] dm message ?
+ - [ ] report alert ?
+ - [ ] update information
+ - [ ] server boardcast message
 
 # Project files:
 - index.html
-- chathub.html
 
 # Information:
   The project is to test chat messages. As well some vary types. Like direct message, group chat and server group.
@@ -72,9 +71,33 @@ ctx.newUuidV7()
 - @noble/ciphers ( required random)
 
 # Group chat filter:
-  There are differen ways to handle group chat. The SpaceTimeDB has view and anonymousView features. As well there are pros and cons.
+  There are different ways to handle group chat. The SpaceTimeDB has view and anonymousView features. As well there are pros and cons.
+
+  View table can filter out the current user can see data. anonymousView is full pulbic table that everyone can see.
 
   https://spacetimedb.com/docs/functions/views
+
+```
+  ctx.db.<tablename>...
+  ctx.from.<tablename>...
+```
+  They do have SQL query but in chain function return. To simple query table to query multiple table match.
+
+## from (dev notes):
+```
+  ctx.from.<tablename>...
+```
+  In SQL, the FROM clause is used to specify the source of the data for your query, typically identifying one or more tables.
+
+
+```ts
+//...
+t.array(groupChatMessage.rowType),
+//...
+return ctx.from.groupChatMessage
+  .leftSemijoin(ctx.from.groupChatMember, (g,m)=>g.groupId.eq(m.groupId).and(m.memberId.eq(ctx.sender)))
+```
+
 
 ## Client side:
   It has it pros and cons. It can easy expose the public messages from other chat groups. Reason it open to query easy.
@@ -189,6 +212,10 @@ export const all_group_chat_messages = spacetimedb.view(
     // return []
   })
 ```
+### Method 3
+```ts
+```
+
 
 # Callbacks onInsert, onUpdate, OnDelete:
   Note that when create a window instance. When handle the element window panel floating.
