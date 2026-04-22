@@ -9,9 +9,13 @@ import spacetimedb from "../module";
 export const send_message = spacetimedb.reducer({ text: t.string() }, (ctx, { text }) => {
   validateMessage(text);
   console.info(`User ${ctx.sender}: ${text}`);
-  ctx.db.message.insert({
+
+  const user =  ctx.db.users.identity.find(ctx.sender)
+  if(!user) return;
+
+  ctx.db.messages.insert({
     id:0n,
-    senderId: ctx.sender,
+    userId: user.userId,
     content:text,
     createdAt: ctx.timestamp,
   });

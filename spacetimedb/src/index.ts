@@ -17,11 +17,11 @@ import {
   add_contact,
   add_contact_id,
   remove_contact_id,
-  // remove_contact,
-  // block_contact,
 } from './reducers/reducer_contact';
 
-import { view_contact } from './views/view_contact';
+import {get_user_name_id} from './procedures/procedure_user';
+
+import { view_contacts } from './views/view_contact';
 
 import { 
   send_direct_message, 
@@ -59,12 +59,13 @@ export {
   set_name,
   set_custom_status,
   current_user,
+  get_user_name_id,
   user_current_avatar,
   upload_avatar,
   add_contact,
   add_contact_id,
   remove_contact_id,
-  view_contact,
+  view_contacts,
   //
   send_message, // test
   // 

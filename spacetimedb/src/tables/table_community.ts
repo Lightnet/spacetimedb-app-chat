@@ -35,8 +35,8 @@ import { table, t  } from 'spacetimedb/server';
 //-----------------------------------------------
 // Text Channel
 //-----------------------------------------------
-export const textChannel = table(
-  { name: 'text_channel', public: true },
+export const textChannels = table(
+  { name: 'text_channels', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     parentId:t.u64(),
@@ -48,8 +48,8 @@ export const textChannel = table(
   }
 );
 
-export const textChannelMember  = table(
-  { name: 'text_channel_member', public: true },
+export const textChannelMembers  = table(
+  { name: 'text_channel_members', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     parentId:t.u64(),
@@ -61,8 +61,8 @@ export const textChannelMember  = table(
   }
 );
 
-export const textChannelMessage  = table(
-  { name: 'text_channel_message', public: true },
+export const textChannelMessages  = table(
+  { name: 'text_channel_messages', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     parentId:t.u64(),

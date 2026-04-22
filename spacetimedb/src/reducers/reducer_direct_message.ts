@@ -3,7 +3,7 @@
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 import spacetimedb from '../module';
 import { validateMessage } from '../helper';
-import { directMessage } from '../models/model_direct_message';
+import { directMessages } from '../tables/table_direct_message';
 
 
 //-----------------------------------------------
@@ -15,7 +15,7 @@ export const send_direct_message = spacetimedb.reducer(
   validateMessage(text);
   console.info(`User ${ctx.sender}: ${text}`);
 
-  ctx.db.directMessage.insert({
+  ctx.db.directMessages.insert({
     id:0n,
     senderId: ctx.sender,
     recipientId: ctx.sender,
@@ -30,10 +30,10 @@ export const send_direct_message = spacetimedb.reducer(
 //-----------------------------------------------
 export const my_direct_message = spacetimedb.view(
   {name:'my_direct_message', public:true },
-  t.array(directMessage.rowType),
+  t.array(directMessages.rowType),
   (ctx) => {
     const received = Array.from(
-      ctx.db.directMessage.recipientId.filter(ctx.sender)
+      ctx.db.directMessages.recipientId.filter(ctx.sender)
     )
     return received ?? [];
 });

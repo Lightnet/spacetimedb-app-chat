@@ -3,21 +3,21 @@
 //-----------------------------------------------
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 import spacetimedb from '../module';
-import { user, userAvatar } from '../models/model_user';
+import { users } from '../tables/table_user';
 import { validateMessage, validateName } from '../helper';
-import { groupChatMessage } from '../models/model_group_chat';
+import { groupChatMessages } from '../tables/table_group_chat';
 //-----------------------------------------------
 // view set current group id chat
 //-----------------------------------------------
 export const current_group_chat_messages = spacetimedb.view(
   { name: 'current_group_chat_messages', public: true },
-  t.array(groupChatMessage.rowType), 
+  t.array(groupChatMessages.rowType), 
   (ctx) => {
     //check current user config
-    const _groupConfig = ctx.db.groupChatConfig.identity.find(ctx.sender);
+    const _groupConfig = ctx.db.groupChatConfigs.identity.find(ctx.sender);
     if(_groupConfig){
       //return group chat message to filter by group chat id.
-      return Array.from(ctx.db.groupChatMessage.groupId.filter(_groupConfig.groupChatId));
+      return Array.from(ctx.db.groupChatMessages.groupId.filter(_groupConfig.groupChatId));
     }
     return [];
   }
@@ -27,7 +27,7 @@ export const current_group_chat_messages = spacetimedb.view(
 //-----------------------------------------------
 export const all_group_chat_messages = spacetimedb.view(
   { name: 'all_group_chat_messages', public: true },
-  t.array(groupChatMessage.rowType),
+  t.array(groupChatMessages.rowType),
   (ctx) => {
     // ctx.sender = user id.
     //get current group that user join
@@ -47,7 +47,7 @@ export const all_group_chat_messages = spacetimedb.view(
 
     // g=group
     // m=member
-    return ctx.from.groupChatMessage
-      .leftSemijoin(ctx.from.groupChatMember, (g,m)=>g.groupId.eq(m.groupId).and(m.memberId.eq(ctx.sender)))
+    return ctx.from.groupChatMessages
+      .leftSemijoin(ctx.from.groupChatMembers, (g,m)=>g.groupId.eq(m.groupId).and(m.memberId.eq(ctx.sender)))
     // return []
   })

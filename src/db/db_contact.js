@@ -33,14 +33,14 @@ export function setupDBContact(){
       // ctx.
       // console.log(ctx);
     // })
-    .subscribe(tables.view_contact);
+    .subscribe(tables.view_contacts);
 
-  conn.db.view_contact.onInsert((ctx, row)=>{
+  conn.db.view_contacts.onInsert((ctx, row)=>{
     console.log("Contact Added...", row);
     addOrUpdateContact(row);
   });
 
-  conn.db.view_contact.onDelete((ctx, row)=>{
+  conn.db.view_contacts.onDelete((ctx, row)=>{
     console.log("Contact Delete...", row);
     deleteContact(row.id);
   });

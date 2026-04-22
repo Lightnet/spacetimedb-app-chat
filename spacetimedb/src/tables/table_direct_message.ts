@@ -5,8 +5,8 @@ import { table, t  } from 'spacetimedb/server';
 //-----------------------------------------------
 // Direct Message
 //-----------------------------------------------
-export const directMessage = table(
-  { name: 'direct_message', public: true },
+export const directMessages = table(
+  { name: 'direct_messages', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     senderId: t.identity().index('btree'),       // who sent it
@@ -18,8 +18,8 @@ export const directMessage = table(
   }
 );
 
-export const directMessageConfig = table(
-  { name: 'direct_message_config', public: true },
+export const directMessageConfigs = table(
+  { name: 'direct_message_configs', public: true },
   {
     identity:t.identity().primaryKey(),
     senderId:t.identity().optional(), // from user

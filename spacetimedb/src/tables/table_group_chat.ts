@@ -7,8 +7,8 @@ import { table, t  } from 'spacetimedb/server';
 // Group Chat
 //-----------------------------------------------
 
-export const groupChat = table(
-  { name: 'group_chat', public: true },
+export const groupChats = table(
+  { name: 'group_chats', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     parentId:t.u64(),
@@ -20,8 +20,8 @@ export const groupChat = table(
   }
 );
 // group chat config for set and get current group chat
-export const groupChatConfig = table(
-  { name: 'group_chat_config', public: true },
+export const groupChatConfigs = table(
+  { name: 'group_chat_configs', public: true },
   {
     identity:t.identity().primaryKey(),
     groupChatId: t.u64(),
@@ -31,8 +31,8 @@ export const groupChatConfig = table(
 );
 
 // list member to talk group.
-export const groupChatMember = table(
-  { name: 'group_chat_member', public: true },
+export const groupChatMembers = table(
+  { name: 'group_chat_members', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     groupId:t.u64().index('btree'),
@@ -45,8 +45,8 @@ export const groupChatMember = table(
 //-----------------------------------------------
 // Group Message
 //-----------------------------------------------
-export const groupChatMessage = table(
-  { name: 'group_chat_message', public: true },
+export const groupChatMessages = table(
+  { name: 'group_chat_messages', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     groupId:t.u64().index('btree'),

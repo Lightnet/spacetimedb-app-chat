@@ -10,16 +10,16 @@ export const add_contact = spacetimedb.reducer(
   { id: t.string() }, 
   (ctx, { id }) => {
     //check for current user
-    const own = ctx.db.user.identity.find(ctx.sender);
+    const own = ctx.db.users.identity.find(ctx.sender);
     if(!own){
       return;
     }
     //check register user exist
-    const user = ctx.db.user.userId.find(id);
+    const user = ctx.db.users.userId.find(id);
     let isFound = false;
     if(user){
       // need to fixed only current user not all users.
-      for (const contact of ctx.db.contact.identity.filter(own.userId)){
+      for (const contact of ctx.db.contacts.identity.filter(own.userId)){
         if(contact.userId == id){
           console.log("found");
           isFound=true;
@@ -28,7 +28,7 @@ export const add_contact = spacetimedb.reducer(
       }
       //make sure contact user exist and not found to add once.
       if((isFound == false)&&(user != null)){
-        ctx.db.contact.insert({
+        ctx.db.contacts.insert({
           identity: own.userId,
           userId: id,
           created_at: ctx.timestamp,
@@ -49,15 +49,15 @@ export const add_contact_id = spacetimedb.reducer(
   { id: t.string() }, 
   (ctx, { id }) => {
     //check for current user
-    const own = ctx.db.user.identity.find(ctx.sender);
+    const own = ctx.db.users.identity.find(ctx.sender);
     if(!own){
       return;
     }
     //check register user exist
-    const user = ctx.db.user.userId.find(id);
+    const user = ctx.db.users.userId.find(id);
     let isFound = false;
     if(user){
-      for (const contact of ctx.db.contact.identity.filter(own.userId)){
+      for (const contact of ctx.db.contacts.identity.filter(own.userId)){
         if(contact.userId == id){
           console.log("found");
           isFound=true;
@@ -66,7 +66,7 @@ export const add_contact_id = spacetimedb.reducer(
       }
       //make sure contact user exist and not found to add once.
       if((isFound == false)&&(user != null)){
-        ctx.db.contact.insert({
+        ctx.db.contacts.insert({
           id:ctx.newUuidV7().toString(),
           identity: own.userId,
           userId: id,
@@ -96,11 +96,11 @@ export const remove_contact_id = spacetimedb.reducer(
   (ctx, { id }) => {
     // 
     console.log("id:", id);
-    const own = ctx.db.user.identity.find(ctx.sender);
+    const own = ctx.db.users.identity.find(ctx.sender);
     if(!own){
       return;
     }
-    ctx.db.contact.id.delete(id);
+    ctx.db.contacts.id.delete(id);
     // //check register user exist
     // const user = ctx.db.user.userId.find(id);
     // let isFound = false;
@@ -130,19 +130,19 @@ export const block_contact = spacetimedb.reducer(
 export const block_contact_id = spacetimedb.reducer(
   { id: t.string() }, 
   (ctx, { id }) => {
-    const own = ctx.db.user.identity.find(ctx.sender);
+    const own = ctx.db.users.identity.find(ctx.sender);
     if(!own){
       return;
     }
     //check register user exist
-    const user = ctx.db.user.userId.find(id);
+    const user = ctx.db.users.userId.find(id);
     // let isFound = false;
     if(user){
-      for (const contact of ctx.db.contact.identity.filter(own.userId)){
+      for (const contact of ctx.db.contacts.identity.filter(own.userId)){
         if(contact.userId == id){
           console.log("found");
           // contact.isBlock = true;
-          ctx.db.contact.id.update(contact);
+          ctx.db.contacts.id.update(contact);
           break;
         }
       }

@@ -4,7 +4,7 @@
 // import { DbConnection, tables } from '../module_bindings';
 import { Modal } from "vanjs-ui";
 import van from "vanjs-core";
-import { userAvatarUrl, userName, userStatus } from "../../context";
+import { stateConn, userAvatarUrl, userName, userStatus } from "../../context";
 
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
@@ -16,6 +16,7 @@ export function editUserNamePanel(){
   const editUserName = van.state("");
   function applyEditName(){
     try {
+      const conn = stateConn.val;
       // console.log("Set Name:", editUserName.val);
       conn.reducers.setName({name:editUserName.val});
       closed.val = true;
@@ -39,7 +40,8 @@ function editStatusPanel(){
   const editCustomStatus = van.state("");
   function applyEditName(){
     try {
-      // console.log("Set Name:", editCustomStatus.val);
+      const conn = stateConn.val;
+      // console.log("Set Status:", editCustomStatus.val);
       console.log(conn.reducers);
       conn.reducers.setCustomStatus({text:editCustomStatus.val});
       closed.val = true;
@@ -71,7 +73,8 @@ function editAvatarImagePanel(){
     const fileBytes = new Uint8Array(arrayBuffer);
     // console.log(arrayBuffer);
     try {
-      conn.reducers.uploadAvatar({
+      const conn = stateConn.val;
+      await conn.reducers.uploadAvatar({
         userId:BigInt(1),
         mimeType:file.type,
         data:fileBytes
@@ -79,7 +82,7 @@ function editAvatarImagePanel(){
       console.log("pass!");
       closed.val = true;
     } catch (error) {
-      console.log("upload failed!");
+      console.log("upload failed!", error.message);
     }
   }
 

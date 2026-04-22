@@ -3,13 +3,15 @@
 // import { Random } from 'spacetimedb/server';
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
-import { user, userAvatar } from './models/model_user';
-import { groupChat, groupChatConfig, groupChatMember, groupChatMessage } from './models/model_group_chat';
-import { directMessage, directMessageConfig } from './models/model_direct_message';
-import { generateRandomString } from './helper';
-import { messageEvent } from './models/model_event';
-import { contact } from './models/model_contact';
-import { sessions } from './models/model_session';
+import { users } from './tables/table_user';
+import { groupChats, groupChatConfigs, groupChatMembers, groupChatMessages } from './tables/table_group_chat';
+import { directMessages, directMessageConfigs } from './tables/table_direct_message';
+// import { generateRandomString } from './helper';
+import { messageEvent } from './tables/table_event';
+import { contacts } from './tables/table_contact';
+import { sessions } from './tables/table_session';
+import { userAvatars } from './tables/table_image';
+import { messages } from './tables/table_message';
 
 //-----------------------------------------------
 // Message
@@ -28,19 +30,19 @@ const message = table(
 // SPACETIME SCHEMA
 //-----------------------------------------------
 const spacetimedb = schema({
-  user,
+  users,
   sessions,
-  userAvatar,
-  contact,
-  message,
+  userAvatars,
+  contacts,
+  messages,
   //=============================================
-  directMessage,
-  directMessageConfig,
+  directMessages,
+  directMessageConfigs,
   //=============================================
-  groupChat,
-  groupChatConfig,
-  groupChatMember,
-  groupChatMessage,
+  groupChats,
+  groupChatConfigs,
+  groupChatMembers,
+  groupChatMessages,
   //=============================================
   messageEvent,
   //=============================================
@@ -59,7 +61,7 @@ export const init = spacetimedb.init(_ctx => {
 // ON CLIENT CONNECT
 //-----------------------------------------------
 export const onConnect = spacetimedb.clientConnected(ctx => {
-  const user = ctx.db.user.identity.find(ctx.sender);
+  const user = ctx.db.users.identity.find(ctx.sender);
   // console.log("ctx: ",ctx);
   // console.log("connectionId: ",ctx.connectionId); //socket id ???
   // console.log("connectionId: ",ctx.connectionId?.toHexString());
@@ -67,11 +69,11 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
   console.log("SENDER: ",ctx.sender.toHexString());
   console.log(ctx.random())
   if (user) {
-    ctx.db.user.identity.update({ ...user, online: true });
+    ctx.db.users.identity.update({ ...user, online: true });
   } else {
     // let generateName = generateRandomString(ctx,12);
     let generateName = String(ctx.newUuidV7()).replaceAll("-","");
-    ctx.db.user.insert({
+    ctx.db.users.insert({
       identity: ctx.sender,
       id: 0n,
       userId: generateName,
@@ -100,9 +102,9 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
 // ON CLIENT DISCONNECT
 //-----------------------------------------------
 export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
-  const user = ctx.db.user.identity.find(ctx.sender);
+  const user = ctx.db.users.identity.find(ctx.sender);
   if (user) {
-    ctx.db.user.identity.update({ 
+    ctx.db.users.identity.update({ 
       ...user, 
       online: false ,
       status: {tag:"Offline"},

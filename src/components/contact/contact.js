@@ -36,24 +36,25 @@ function delete_contact_id(id){
   });
 }
 
-export function contactList(){
 
-  const myContacts = van.derive(()=>{
-    const contacts = Array.from(dbContacts.val.values());
-    console.log(contacts);
+const ContactItem = ({ contact, conn }) => {
+  const name = van.state("Loading...");
+  
+  // Trigger the async call immediately
+  conn.procedures.getUserNameId({ id: contact.userId })
+    .then(val => name.val = val ?? "Unknown");
 
-    return div(
-      contacts.map(contact => {
+  return div({ id: 'contact-' + contact.id },
+    label(van.derive(() => `[ ${name.val.substring(0, 16)} ]`)),// limit to 16 character
+    button({ onclick: () => delete_contact_id(contact.id) }, '[ Delete ]')
+  );
+};
 
-        return div({id:'contact-'+contact.id},
-          label("[ "+contact.name+" ]"),
-          // button({onclick:()=>setupChatPanel(contact.id, contact.name)},'[ Join ]'),
-          span(' '),
-          button({onclick:()=>delete_contact_id(contact.id)},'[ Delete ]')
-        )
-      })
-    );
-  });
-
-  return myContacts;
+export function contactList() {
+  return van.derive(() => div(
+    Array.from(dbContacts.val.values()).map(contact => 
+      ContactItem({ contact, conn: stateConn.val })
+    )
+  ));
 }
+

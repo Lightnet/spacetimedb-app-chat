@@ -22,15 +22,15 @@ export function setupDBGroupChat(){
   const conn = stateConn.val;
   conn
     .subscriptionBuilder()
-    .subscribe(tables.groupChat);
+    .subscribe(tables.groupChats);
 
-  conn.db.groupChat.onInsert((ctx, row)=>{
+  conn.db.groupChats.onInsert((ctx, row)=>{
     console.log("Group Chat", row);
     // displayAvatar(row.data, row.type);
     addOrUpdateGroupChat(row)
   })
 
-  conn.db.groupChat.onDelete((ctx, row)=>{
+  conn.db.groupChats.onDelete((ctx, row)=>{
     console.log("Delete Group Chat");
     console.log(row);
     // displayAvatar(row.data, row.type);

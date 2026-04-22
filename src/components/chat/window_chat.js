@@ -47,7 +47,8 @@ export function ChatWindow() {
     }
     let side = '';
     console.log(row)
-    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+    // if(row.userId.toHexString() == userIdentity.val.toHexString()){
+    if(row.userId == userIdentity.val.toHexString()){
       // console.log("FOUND USER???");
       side = "sent";
     }
@@ -62,12 +63,12 @@ export function ChatWindow() {
       .subscriptionBuilder()
       .onApplied((ctx)=>{
         // connMessage = ctx;
-        ctx.db.message.onInsert(update_message);
+        ctx.db.messages.onInsert(update_message);
       })
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
-      .subscribe(tables.message);
+      .subscribe(tables.messages);
     console.log(messageSub);
   }
 
@@ -89,6 +90,7 @@ export function ChatWindow() {
     },50);
   });
 
+  // need to clean up differently.
   van.derive(()=>{
     console.log("group chat closed: ", closed.val);
     if(closed.val == true){
@@ -96,7 +98,8 @@ export function ChatWindow() {
       if(messageSub != null){
         if(messageSub.isActive){
           // remove callback function
-          conn.db.message.removeOnInsert(update_message);
+          const conn = stateConn.val;
+          conn.db.messages.removeOnInsert(update_message);
           // subscription remove table listen
           messageSub.unsubscribe();
         }

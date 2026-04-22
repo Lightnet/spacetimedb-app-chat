@@ -6,7 +6,7 @@
 import { table, t } from 'spacetimedb/server';
 // import { status } from '../types';
 
-export const config = table(
+export const configs = table(
   { 
     name: 'config', 
     public: true,

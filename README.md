@@ -17,20 +17,26 @@
 - vite 8.0.0
 
 # Features:
-- [ ] upload image ( buffer )
+- [x] upload image ( buffer )
 - [ ] get image ( two method procedure or view)
 - [ ] user ( simple account no password)
-  - [ ] edit name
-  - [ ] edit status
+  - [x] edit name
+  - [x] edit status
   - [ ] edit bio
 - [ ] message (simple message)
 - [ ] direct message ( wip )
-- [ ] simple chat ui ( wip )
+- [x] simple chat ui ( wip )
 - [ ] group chat ( wip )
-  - [ ] group name
+  - [x] group name
   - [ ] group config
-  - [ ] group member
-  - [ ] group message
+  - [ ] group members
+  - [x] group message
+  - [x] create group ( wip )
+  - [x] delete group ( wip )
+- [ ] contact
+  - [x] add 
+  - [x] remove 
+  - [ ] block
 - [ ] notifications
  - [ ] friend online / offline
  - [ ] new message ?

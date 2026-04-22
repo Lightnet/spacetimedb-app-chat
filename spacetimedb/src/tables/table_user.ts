@@ -3,14 +3,14 @@
 import { table, t } from 'spacetimedb/server';
 import { status } from '../types';
 
-export const user = table(
+export const users = table(
   { 
-    name: 'user', 
+    name: 'users', 
     public: true,
   },
   {
-    identity: t.identity().primaryKey(),
     id:t.u64().autoInc(),
+    identity: t.identity().primaryKey(),
     userId: t.string().unique(),
     name: t.string().optional(), // user name
     // status: t.enum(['online', 'idle', 'dnd', 'offline']).default('offline'), 
@@ -21,18 +21,6 @@ export const user = table(
     online: t.bool(),
     accent_color: t.u32().optional(),
     created_at:   t.timestamp(),
-  }
-);
-//-----------------------------------------------
-// Avatar Image Data Store
-//-----------------------------------------------
-export const userAvatar = table(
-  { name: 'user_avatar', public: true },
-  {
-    userId: t.u64().primaryKey(),
-    mimeType: t.string(),
-    data: t.array(t.u8()),  // Binary data stored inline
-    uploadedAt: t.timestamp(),
   }
 );
 

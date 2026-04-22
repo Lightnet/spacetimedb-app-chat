@@ -3,8 +3,8 @@
 import { table, t  } from 'spacetimedb/server';
 
 
-export const BoardMessage = table(
-  { name: 'board_message', public: true },
+export const BoardMessages = table(
+  { name: 'board_messages', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     userId: t.identity(),
@@ -15,8 +15,8 @@ export const BoardMessage = table(
   }
 );
 
-export const BoardTopic = table(
-  { name: 'board_topic', public: true },
+export const BoardTopics = table(
+  { name: 'board_topics', public: true },
   {
     id:t.u64().primaryKey().autoInc(),
     userId: t.identity(),

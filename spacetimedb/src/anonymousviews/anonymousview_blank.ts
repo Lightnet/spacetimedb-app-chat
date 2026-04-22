@@ -2,7 +2,7 @@
 
 import { table, t } from 'spacetimedb/server';
 import spacetimedb from '../module';
-import { user } from '../models/model_user';
+import { user } from '../tables/table_user';
 
 export const public_user = spacetimedb.anonymousView(
     { name: 'public_user', public: true },

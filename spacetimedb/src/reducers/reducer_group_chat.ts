@@ -1,8 +1,8 @@
 import { schema, table, t, SenderError  } from 'spacetimedb/server';
 import spacetimedb from '../module';
-import { user, userAvatar } from '../models/model_user';
+import { users } from '../tables/table_user';
 import { validateMessage, validateName } from '../helper';
-import { groupChatMessage } from '../models/model_group_chat';
+import { groupChatMessages } from '../tables/table_group_chat';
 
 
 //-----------------------------------------------
@@ -13,7 +13,7 @@ export const create_group_chat = spacetimedb.reducer(
   (ctx, { name, content }) => {
   validateMessage(name);
   // console.info(`User ${ctx.sender}: ${name}`);
-  const group = ctx.db.groupChat.insert({
+  const group = ctx.db.groupChats.insert({
     status: undefined,
     id: 0n,
     name: name,
@@ -24,7 +24,7 @@ export const create_group_chat = spacetimedb.reducer(
   });
   //console.log("group:", group);
   if(group){
-    ctx.db.groupChatMember.insert({
+    ctx.db.groupChatMembers.insert({
       status: undefined,
       id: 0n,
       createdAt: ctx.timestamp,
@@ -42,12 +42,12 @@ export const delete_group_chat = spacetimedb.reducer(
   (ctx, { id }) => {
   console.info(`DELETE Group Chat: ${ctx.sender}: ${id}`);
 
-  ctx.db.groupChat.id.delete(id);
+  ctx.db.groupChats.id.delete(id);
 
   //look for groupid to delete members.
-  for (const member of ctx.db.groupChatMember.groupId.filter(id)){
+  for (const member of ctx.db.groupChatMembers.groupId.filter(id)){
     // if (member.groupId == id){
-      ctx.db.groupChatMember.delete(member);
+      ctx.db.groupChatMembers.delete(member);
     // }
   }
 });
@@ -59,10 +59,10 @@ export const send_group_chat_message = spacetimedb.reducer(
   (ctx, { id, content }) => {
   console.info(`ctx.sender: ${ctx.sender}  Group Chat Id: ${id}`);
 
-  const _groupChat = ctx.db.groupChat.id.find(id);
+  const _groupChat = ctx.db.groupChats.id.find(id);
 
   if(_groupChat){
-    ctx.db.groupChatMessage.insert({
+    ctx.db.groupChatMessages.insert({
       id: 0n,
       senderId: ctx.sender,
       content: content,
@@ -78,13 +78,13 @@ export const set_group_chat_id = spacetimedb.reducer(
   { id:t.u64() },
   (ctx, { id }) => {
     console.info(`ctx.sender: ${ctx.sender}  Group Chat Id: ${id}`);
-    const config = ctx.db.groupChatConfig.identity.find(ctx.sender);
+    const config = ctx.db.groupChatConfigs.identity.find(ctx.sender);
 
     if(config){
       config.groupChatId = id;
-      ctx.db.groupChatConfig.identity.update(config);
+      ctx.db.groupChatConfigs.identity.update(config);
     }else{
-      ctx.db.groupChatConfig.insert({
+      ctx.db.groupChatConfigs.insert({
         status: undefined,
         identity: ctx.sender,
         createdAt: ctx.timestamp,

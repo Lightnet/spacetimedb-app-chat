@@ -2,18 +2,18 @@
 
 import { t, SenderError  } from 'spacetimedb/server';
 import spacetimedb from '../module';
-import { contact } from '../models/model_contact';
+import { contacts } from '../tables/table_contact';
 
 //-----------------------------------------------
 // USER CURRENT STATUS
 //-----------------------------------------------
-export const view_contact = spacetimedb.view(
-  { name: 'view_contact', public: true },
-  t.array(contact.rowType), // return row data if exist
+export const view_contacts = spacetimedb.view(
+  { name: 'view_contacts', public: true },
+  t.array(contacts.rowType), // return row data if exist
   (ctx) => {
-    const _user = ctx.db.user.identity.find(ctx.sender);
+    const _user = ctx.db.users.identity.find(ctx.sender);
     if(_user){
-        return Array.from(ctx.db.contact.identity.filter(_user.userId)) ?? [];
+        return Array.from(ctx.db.contacts.identity.filter(_user.userId)) ?? [];
     }
     return [];
 });

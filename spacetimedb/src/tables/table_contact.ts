@@ -2,9 +2,9 @@
 
 import { table, t } from 'spacetimedb/server';
 
-export const contact = table(
+export const contacts = table(
   { 
-    name: 'contact', 
+    name: 'contacts', 
     public: true,
   },
   {
