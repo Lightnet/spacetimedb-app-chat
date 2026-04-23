@@ -40,7 +40,7 @@ export const send_direct_message = spacetimedb.reducer(
   });
 
   // Update or create conversation summary
-  let conv = ctx.db.conversations.id.find(convKey);
+  let conv = ctx.db.directConversations.id.find(convKey);
   if (!conv) {
     conv = {
         id: convKey,
@@ -49,18 +49,43 @@ export const send_direct_message = spacetimedb.reducer(
         lastMessageAt: now,
         lastMessagePreview: text.slice(0, 100),
         unreadCountA: 0,
-        unreadCountB: 0,
+        unreadCountB: 1,
       };
-      ctx.db.conversations.insert(conv);
+      ctx.db.directConversations.insert(conv);
   }else{
     // Update existing conversation
-    ctx.db.conversations.id.update({
-      ...conv,
+    const isSenderA = senderId === conv.userA;
+    // Update existing conversation
+    ctx.db.directConversations.id.update({
+      ...conv,                             // spread current values
       lastMessageAt: now,
       lastMessagePreview: text.slice(0, 100),
+      unreadCountA: isSenderA ? conv.unreadCountA : conv.unreadCountA + 1,
+      unreadCountB: isSenderA ? conv.unreadCountB + 1 : conv.unreadCountB,
     });
 
   }
   console.log("finsihed.");
 });
 
+export const mark_conversation_as_read = spacetimedb.reducer(
+  {id:t.string()},
+  (ctx, {id})=>{
+
+    const conv = ctx.db.directConversations.id.find(id);
+
+    if (!conv) return;
+
+    const isUserA = id === conv.userA;
+
+    ctx.db.directConversations.id.update({
+      ...conv,
+      unreadCountA: isUserA ? 0 : conv.unreadCountA,
+      unreadCountB: isUserA ? conv.unreadCountB : 0,
+    });
+
+    // Optional: mark individual messages as read
+    // You can loop and update readAt if needed
+
+  }
+)

@@ -6,6 +6,7 @@ import { ChatWindow } from './chat/window_chat.js';
 import { groupChatCreate, groupChatList } from './groupchat/groupchat.js';
 import { contactAdd, contactList } from './contact/contact.js';
 import van from "vanjs-core";
+import { DirectConversationsList } from './directmessage/directmessage.js';
 // import { Modal } from "vanjs-ui";
 
 const { div, input, textarea, button, span, img, label, p } = van.tags;
@@ -95,6 +96,8 @@ export function App() {
       contactList(),
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       label("Messages"),
+
+      DirectConversationsList(),
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       // "Settings"
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),

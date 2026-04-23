@@ -12,6 +12,7 @@ import { UserPanel } from './components/user/user.js';
 import { setupDBGroupChat } from './db/db_groupchat.js';
 import { setupDBContact } from './db/db_contact.js';
 import { App } from './components/app.js';
+import { setupDBDirectMessage } from './db/db_directmessge.js';
 
 const {style, div, input, textarea, button, span, img, label, p } = van.tags;
 
@@ -93,6 +94,7 @@ function initDB(){
   setupDBImageAvatar();
   setupDBGroupChat();
   setupDBContact();
+  setupDBDirectMessage();
   // test_db();
 }
 

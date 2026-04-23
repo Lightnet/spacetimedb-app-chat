@@ -5,7 +5,7 @@ import { schema, table, t, SenderError  } from 'spacetimedb/server';
 
 import { users } from './tables/table_user';
 import { groupChats, groupChatConfigs, groupChatMembers, groupChatMessages } from './tables/table_group_chat';
-import { directMessages, directMessageConfigs, conversations } from './tables/table_direct_message';
+import { directMessages, directMessageConfigs, directConversations } from './tables/table_direct_message';
 // import { generateRandomString } from './helper';
 import { messageEvent } from './tables/table_event';
 import { contacts } from './tables/table_contact';
@@ -37,7 +37,7 @@ const spacetimedb = schema({
   messages,
   //=============================================
   directMessages,
-  conversations,
+  directConversations,
   directMessageConfigs,
   //=============================================
   groupChats,

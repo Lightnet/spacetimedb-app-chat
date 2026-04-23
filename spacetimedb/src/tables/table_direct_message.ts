@@ -24,8 +24,8 @@ export const directMessages = table(
 );
 
 // Optional: A simple "conversations" or "thread" summary table (highly recommended)
-export const conversations = table(
-  { name: 'conversations', public: false },
+export const directConversations = table(
+  { name: 'direct_conversations', public: false },
   {
     // Normalized unique key for any two users (smaller ID first)
     id: t.string().primaryKey(),   // e.g. "identityA:identityB" with A < B lexicographically

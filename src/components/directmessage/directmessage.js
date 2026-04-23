@@ -1,4 +1,4 @@
-import { stateConn, userId } from "../../context";
+import { dbDirectConversations, stateConn, userId } from "../../context";
 import { tables } from "../../module_bindings";
 import van from "vanjs-core";
 import { Modal } from "vanjs-ui";
@@ -8,10 +8,37 @@ import { onDetach } from "../helpers/ondetach";
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
 
-function modalDirectMessages(){
+export function DirectConversationsList(){
 
+  function renderUnread(item){
+    if(item.userA == userId.val ){
+      if(item.unreadCountA > 0){
+        return label('('+ String(item.unreadCountA) + ')')
+      }
+    }
+    if(item.userB == userId.val ){
+      if(item.unreadCountB > 0){
+        return label('('+ String(item.unreadCountB) + ')')
+      }
+    }
+    return span()
+  }
 
+  const groups = van.derive(()=>{
+    const chats = Array.from(dbDirectConversations.val.values());
+    // console.log(chats);
+    return div(
+      chats.map(group => div({id:'group-chat-'+group.id},
+        label("["+group.userB.substring(0,20)+"]"),
+        // button({onclick:()=>setupChatPanel(group.id, group.name)},'[ Join ]'),
+        // span(' [Mgs] '),
+        renderUnread(group),
+        // button({onclick:()=>delete_group_chat_id(group.id)},'[ Delete ]')
+      ))
+    );
+  });
 
+  return groups;
 
 }
 
@@ -40,8 +67,7 @@ export function modalDirectMessage(senderId){
     })//.substring(0,16)
     console.log(userName);
     if(userName){
-      stateTitle.val = userName.substring(0,16);
-      // stateTitle.val = userName;
+      stateTitle.val = userName.substring(0,20);
     }
   })
   
@@ -85,12 +111,6 @@ export function modalDirectMessage(senderId){
         .or
         (r.senderId.eq(senderId).and(r.recipientId.eq(userId.val))) // Scenario B: Friend sent to User
       )); 
-
-
-      // .subscribe(tables.my_direct_messages.where(r=>r.recipientId.eq(senderId)));
-      // .subscribe(tables.my_direct_messages.where(
-      //   r=>r.recipientId.eq(senderId).and(r.senderId.eq(userId.val)).or(r.senderId.eq(userId.val).and(r.recipientId.eq(senderId)))
-      // ));
   }
 
   function onKeyDown(e) {

@@ -15,5 +15,7 @@ export const stateConn = van.state(null);
 export const dbUsers = van.state(new Map());
 export const dbGroupChats = van.state(new Map());
 export const dbContacts = van.state(new Map());
-export const dbDirectMessages = van.state(new Map());
+// export const dbDirectMessages = van.state(new Map());
+// last message and counts
+export const dbDirectConversations = van.state(new Map());
 
