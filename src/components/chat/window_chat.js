@@ -4,6 +4,8 @@ import { networkStatus, stateConn, userIdentity } from "../../context";
 import van from "vanjs-core";
 import { Modal } from "vanjs-ui";
 import { tables } from "../../module_bindings";
+import { onDetach } from "../helpers/ondetach";
+import { debounce } from "../helpers/debounce";
 
 const { div, input, textarea, button, span, img, label, p, table } = van.tags;
 
@@ -53,6 +55,7 @@ export function ChatWindow() {
       side = "sent";
     }
     messages.val = [...messages.val, { side: side, name: "You", text:row.content }];
+    scrollMessages();
   }
 
 // https://spacetimedb.com/docs/clients/subscriptions/
@@ -79,39 +82,65 @@ export function ChatWindow() {
     }
   }
 
+  function updateMessageScroll(){
+    const container = document.getElementById('messages');
+    if (container) {
+      //container.scrollTop = container.scrollHeight
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }
+  const scrollMessages = debounce(updateMessageScroll, 100);
+
   //scroll
-  van.derive(()=>{
-    messages.val;
-    setTimeout(()=>{
-      const container = document.getElementById('messages');
-      if (container) {
-        container.scrollTop = container.scrollHeight
-      }
-    },50);
-  });
+  // van.derive(()=>{
+  //   messages.val;
+  //   setTimeout(()=>{
+  //     const container = document.getElementById('messages');
+  //     if (container) {
+  //       container.scrollTop = container.scrollHeight
+  //     }
+  //   },50);
+  // });
 
   // need to clean up differently.
-  van.derive(()=>{
-    console.log("group chat closed: ", closed.val);
-    if(closed.val == true){
-      console.log(messageSub);
-      if(messageSub != null){
-        if(messageSub.isActive){
-          // remove callback function
-          const conn = stateConn.val;
-          conn.db.messages.removeOnInsert(update_message);
-          // subscription remove table listen
-          messageSub.unsubscribe();
-        }
+  // van.derive(()=>{
+  //   console.log("group chat closed: ", closed.val);
+  //   if(closed.val == true){
+  //     console.log(messageSub);
+  //     if(messageSub != null){
+  //       if(messageSub.isActive){
+  //         // remove callback function
+  //         const conn = stateConn.val;
+  //         conn.db.messages.removeOnInsert(update_message);
+  //         // subscription remove table listen
+  //         messageSub.unsubscribe();
+  //       }
+  //     }
+  //   }
+  // });
+
+  function cleanUp(){
+    //console.log("clean up...");
+    if(messageSub != null){
+      if(messageSub.isActive){
+        // remove callback function
+        const conn = stateConn.val;
+        conn.db.messages.removeOnInsert(update_message);
+        // subscription remove table listen
+        messageSub.unsubscribe();
       }
     }
-  })
+  }
 
   // watch change to update render
   const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
 
   // Create the window element
   const windowEl = div({class: "window"},
+    onDetach(cleanUp),
     div({class: "titlebar"},
       div({class: "title"}, "Black Chat — Public"),
       div({class: "titlebar-controls"},
@@ -120,11 +149,9 @@ export function ChatWindow() {
         button({onclick:()=>closed.val=true,class: "close"}, "×"),
       )
     ),
-
     div({id:"messages",class: "chat-messages"},
       messageElements
     ),
-
     div({class: "input-area"},
       textarea({
         class: "message-input",

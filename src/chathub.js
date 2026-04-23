@@ -61,6 +61,8 @@ const conn = DbConnection.builder()
     networkStatus.val = 'Connected';
     stateConn.val = conn;
 
+    // conn.db.my_direct_messages
+
     // console.log("identity: ", identity);
     console.log("identity: ", identity.toHexString());
     // console.log("conn: ", conn);

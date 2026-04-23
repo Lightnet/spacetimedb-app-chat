@@ -23,8 +23,11 @@
   - [x] edit name
   - [x] edit status
   - [ ] edit bio
-- [ ] message (simple message)
 - [ ] direct message ( wip )
+  - [x] send message
+  - [x] ui simple
+  - [x] filter current user and other for 1:1
+  - [ ] block user
 - [x] simple chat ui ( wip )
 - [ ] group chat ( wip )
   - [x] group name

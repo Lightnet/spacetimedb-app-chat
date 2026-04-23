@@ -89,25 +89,16 @@ export function App() {
       }},"+"),
       groupChatList(),
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      button({},"Contact"),button({onclick:()=>{
+      button({},"Contacts"),button({onclick:()=>{
         van.add(document.body, contactAdd());
       }},"+"),
       contactList(),
       div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      button({onclick:onTest},'Test'),
-      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      // button("Friend(s)"),
-      // button("+"), 
-      // button("-"),
-
-      // div({style:"font-weight:bold; margin-bottom:16px;"}, "Second Sidebar"),
-      // "Projects",
-      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      // "Team",
-      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
-      // "Messages",
+      label("Messages"),
       // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
       // "Settings"
+      // div({style:"height:1px; background:#30363d; margin:12px 0;"}),
+      // button({onclick:onTest},'Test'),
     ),
 
     // Main content – takes everything that's left

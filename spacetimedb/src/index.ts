@@ -26,7 +26,6 @@ import { view_contacts } from './views/view_contact';
 
 import { 
   send_direct_message, 
-  my_direct_message 
 } from './reducers/reducer_direct_message';
 
 import {
@@ -51,6 +50,8 @@ import {
   test_salt,
 } from './reducers/reducer_test';
 
+import { my_direct_messages} from './views/view_direct_message';
+
 export {
   // spacetimedb predefine
   init,
@@ -71,7 +72,7 @@ export {
   send_message, // test
   // 
   send_direct_message,
-  my_direct_message,
+  my_direct_messages,
   //
   create_group_chat,
   set_group_chat_id,

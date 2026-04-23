@@ -3,6 +3,7 @@
 import { dbContacts, stateConn } from "../../context";
 import van from "vanjs-core";
 import { Modal } from "vanjs-ui";
+import { modalDirectMessage } from "../directmessage/directmessage";
 
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
@@ -90,9 +91,12 @@ function delete_contact_id(id){
   });
 }
 
-
 const ContactItem = ({ contact, conn }) => {
   const name = van.state("Loading...");
+
+  function directMessageId(id){
+    van.add(document.body, modalDirectMessage(id));
+  }
   
   // Trigger the async call immediately
   conn.procedures.getUserNameId({ id: contact.userId })
@@ -100,7 +104,8 @@ const ContactItem = ({ contact, conn }) => {
 
   return div({ id: 'contact-' + contact.id },
     label(van.derive(() => `[ ${name.val.substring(0, 16)} ]`)),// limit to 16 character
-    button({ onclick: () => delete_contact_id(contact.id) }, '[ Delete ]')
+    button({ onclick: () => delete_contact_id(contact.id) }, '[ Delete ]'),
+    button({ onclick: () => directMessageId(contact.userId) }, '[ DM ]'),
   );
 };
 

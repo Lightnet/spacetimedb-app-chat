@@ -1,12 +1,19 @@
-
-import { networkStatus, stateConn, userIdentity } from "../../context";
+import { stateConn, userId } from "../../context";
+import { tables } from "../../module_bindings";
 import van from "vanjs-core";
 import { Modal } from "vanjs-ui";
-import { tables } from "../../module_bindings";
-import { onDetach } from "../helpers/ondetach";
 import { debounce } from "../helpers/debounce";
+import { onDetach } from "../helpers/ondetach";
 
-const { div, input, textarea, button, span, img, label, p, table } = van.tags;
+const { div, input, textarea, button, span, img, label, p } = van.tags;
+
+
+function modalDirectMessages(){
+
+
+
+
+}
 
 //-----------------------------------------------
 // MESSAGE
@@ -17,36 +24,43 @@ const Message = ({side, name, text}) => div(
   text
 );
 
-//-----------------------------------------------
-// WINDOW GROUP CHAT
-//-----------------------------------------------
-export function groupChatWindow(groupId, name){
+export function modalDirectMessage(senderId){
   const closed = van.state(false);
-  const groupChatName = van.state(name);
+  const directMessageId = van.state(senderId);
   const messageInput = van.state("");
   const messages = van.state([]);
-  let groupMsgSub = null;
 
+  const stateTitle = van.state("");
+  let directMessageSub = null;
+
+  const conn = stateConn.val;
+  van.derive( async ()=>{
+    let userName = await conn.procedures.getUserNameId({
+      id:senderId
+    })//.substring(0,16)
+    console.log(userName);
+    if(userName){
+      stateTitle.val = userName.substring(0,16);
+      // stateTitle.val = userName;
+    }
+  })
+  
   function sendMessage() {
     const text = messageInput.val.trim();
     if (!text) return;
-    // messages.val = [...messages.val, { side: "sent", name: "You", text }];
     messageInput.val = "";
-    // conn.reducers.sendMessage({
-    //   text:text
-    // });
-    console.log("groupId: ", groupId);
     const conn = stateConn.val;
-    conn.reducers.sendGroupChatMessage({
-      id:groupId,
-      content:text
+    conn.reducers.sendDirectMessage({
+      id:senderId,
+      text:text
     });
   }
 
   function update_messages(ctx, row){
     let side = '';
     console.log("group msg...");
-    if(row.senderId.toHexString() == userIdentity.val.toHexString()){
+    // console.log(row);
+    if(row.recipientId == userId.val){
       // console.log("FOUND USER???");
       side = "sent";
     }
@@ -57,19 +71,26 @@ export function groupChatWindow(groupId, name){
   function setUpConnChat(){
     //create subscription to unsubscribe.
     const conn = stateConn.val;
-    conn.reducers.setGroupChatId({id:groupId});
 
-    groupMsgSub = conn
+    directMessageSub = conn
       .subscriptionBuilder()
       .onApplied((ctx)=>{
-        // ctx.db.groupChatMessage.onInsert((ctx, row)=>{
-        ctx.db.current_group_chat_messages.onInsert(update_messages);
+        ctx.db.my_direct_messages.onInsert(update_messages);
       })
       .onError((ctx, error) => {
         console.error(`Subscription failed: ${error}`);
       })
-      // .subscribe(tables.groupChatMessage.where(r=>r.groupId.eq(groupId)));
-      .subscribe(tables.current_group_chat_messages);
+      .subscribe(tables.my_direct_messages.where(r => 
+        (r.recipientId.eq(senderId).and(r.senderId.eq(userId.val))) // Scenario A: User sent to Friend
+        .or
+        (r.senderId.eq(senderId).and(r.recipientId.eq(userId.val))) // Scenario B: Friend sent to User
+      )); 
+
+
+      // .subscribe(tables.my_direct_messages.where(r=>r.recipientId.eq(senderId)));
+      // .subscribe(tables.my_direct_messages.where(
+      //   r=>r.recipientId.eq(senderId).and(r.senderId.eq(userId.val)).or(r.senderId.eq(userId.val).and(r.recipientId.eq(senderId)))
+      // ));
   }
 
   function onKeyDown(e) {
@@ -80,7 +101,7 @@ export function groupChatWindow(groupId, name){
   }
 
   function updateMessageScroll(){
-    const container = document.getElementById(groupId);
+    const container = document.getElementById(senderId);
     if (container) {
       //container.scrollTop = container.scrollHeight
       container.scrollTo({
@@ -91,47 +112,22 @@ export function groupChatWindow(groupId, name){
   }
   const scrollMessages = debounce(updateMessageScroll, 100);
 
-  //scroll
-  // van.derive(()=>{
-  //   messages.val;
-  //   setTimeout(()=>{
-  //     updateMessageScroll();
-  //   },50);
-  // });
-  // This will handle the table to unsubscribe. To stop listen table.
-  // TODO
-  // clean here HERE
-  // van.derive(()=>{
-  //   console.log("group chat closed: ", closed.val);
-  //   if(closed.val == true){
-  //     console.log(groupMsgSub);
-  //     if(groupMsgSub.isActive){
-  //       // since it view it need main connector client
-  //       const conn = stateConn.val;
-  //       conn.db.current_group_chat_messages.removeOnInsert(update_messages)
-  //       groupMsgSub.unsubscribe();
-  //     }
-  //   }
-  // });
-
   function cleanUp(){
     console.log("clean up...");
-    if(groupMsgSub.isActive){
+    if(directMessageSub.isActive){
       // since it view it need main connector client
       const conn = stateConn.val;
-      conn.db.current_group_chat_messages.removeOnInsert(update_messages)
-      groupMsgSub.unsubscribe();
+      conn.db.my_direct_messages.removeOnInsert(update_messages)
+      directMessageSub.unsubscribe();
     }
   }
 
-  // watch change to update render
   const messageElements = van.derive(()=>div(messages.val.map(m => Message(m))))
 
-  // Create the window element
   const windowEl = div({class: "window"},
     onDetach(cleanUp),
     div({class: "titlebar"},
-      div({class: "title"}, `${groupChatName.val} - Group Chat`),
+      div({class: "title"}, label(stateTitle),label(" - Direct Message")),
       div({class: "titlebar-controls"},
         button("_"),
         button("□"),
@@ -139,7 +135,7 @@ export function groupChatWindow(groupId, name){
       )
     ),
 
-    div({id:groupId,class: "chat-messages"},
+    div({id:senderId,class: "chat-messages"},
       messageElements
     ),
 
