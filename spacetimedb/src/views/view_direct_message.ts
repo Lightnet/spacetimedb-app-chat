@@ -21,7 +21,7 @@ export const my_direct_messages = spacetimedb.view(
 });
 
 // unread last messages
-export const my_conversations = spacetimedb.view(
+export const my_direct_conversations = spacetimedb.view(
   {name:'my_conversations', public:true },
   t.array(directConversations.rowType),
   // @ts-ignore

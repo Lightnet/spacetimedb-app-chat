@@ -95,7 +95,10 @@ const ContactItem = ({ contact, conn }) => {
   const name = van.state("Loading...");
 
   function directMessageId(id){
-    van.add(document.body, modalDirectMessage(id));
+    const container = document.getElementById(id);
+    if(!container){
+      van.add(document.body, modalDirectMessage(id));
+    }
   }
   
   // Trigger the async call immediately

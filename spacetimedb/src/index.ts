@@ -53,7 +53,7 @@ import {
 
 import { 
   my_direct_messages,
-  my_conversations,
+  my_direct_conversations,
 } from './views/view_direct_message';
 
 export {
@@ -78,7 +78,7 @@ export {
   send_direct_message,
   mark_conversation_as_read,
   my_direct_messages,
-  my_conversations,
+  my_direct_conversations,
   //
   create_group_chat,
   set_group_chat_id,

@@ -10,7 +10,11 @@ const { div, input, textarea, button, span, img, label, p } = van.tags;
 function directMessageId(id,conId){
   const conn = stateConn.val;
   conn.reducers.markConversationAsRead({id:conId});// mark as read when open.
-  van.add(document.body, modalDirectMessage(id));
+  const container = document.getElementById(id);
+  if(!container){
+    van.add(document.body, modalDirectMessage(id));
+  }
+  
 }
 
 export function DirectConversationsList(){
@@ -30,9 +34,12 @@ export function DirectConversationsList(){
 
   function fromUser(item){
     if(item.userB != userId.val){
-      return label({onclick: () => directMessageId(item.userB,item.id)},"["+item.userB.substring(0,20)+"]");
+      return label({onclick: () => directMessageId(item.userB,item.id)},"["+item.userB.substring(0,20)+"]")
     }else{
-      return label({onclick: () => directMessageId(item.userA,item.id)},"["+item.userA.substring(0,20)+"]")
+      
+    }
+    if(item.userA != userId.val){
+      return label({onclick: () => directMessageId(item.userA,item.id)},"["+item.userA.substring(0,20)+"]");
     }
   }
 

@@ -43,7 +43,7 @@ export function setupDBDirectMessage(){
     .subscriptionBuilder()
     //get userid from sender
     // .subscribe(tables.my_conversations.where(r=>r.userB.eq(userId.val)));
-    .subscribe(tables.my_conversations);
+    .subscribe(tables.my_direct_conversations);
 
   //note this get delete while update must be the view call for delete
   // conn.db.my_conversations.onDelete((ctx, row)=>{
@@ -51,7 +51,7 @@ export function setupDBDirectMessage(){
   //   deleteDC(row);
   // });
 
-  conn.db.my_conversations.onInsert((ctx, row)=>{
+  conn.db.my_direct_conversations.onInsert((ctx, row)=>{
     console.log("last conversations Added...", row);
     addOrUpdateDC(row);
   });
