@@ -25,7 +25,8 @@ import {get_user_name_id} from './procedures/procedure_user';
 import { view_contacts } from './views/view_contact';
 
 import { 
-  send_direct_message, 
+  send_direct_message,
+  mark_conversation_as_read,
 } from './reducers/reducer_direct_message';
 
 import {
@@ -75,6 +76,7 @@ export {
   send_message, // test
   // 
   send_direct_message,
+  mark_conversation_as_read,
   my_direct_messages,
   my_conversations,
   //

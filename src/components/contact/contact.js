@@ -12,7 +12,7 @@ export function contactAdd(){
   const contactId = van.state('');
 
   function create_group(){
-    console.log("create : ", contactId.val);
+    // console.log("create : ", contactId.val);
     const conn = stateConn.val;
     conn.reducers.addContact({
       id:contactId.val

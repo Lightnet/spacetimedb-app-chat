@@ -29,7 +29,7 @@ export function setUpDBUser(){
     .subscribe(tables.current_user);
 
   conn.db.current_user.onInsert((ctx, row)=>{
-    console.log('insert current user row', row);
+    // console.log('insert current user row', row);
     if(row.identity.toHexString() == conn.identity.toHexString()){
       // console.log("found current ID:", conn.identity.toHexString());
       // console.log("Name: ",row.name)

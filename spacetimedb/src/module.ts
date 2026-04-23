@@ -12,19 +12,20 @@ import { contacts } from './tables/table_contact';
 import { sessions } from './tables/table_session';
 import { userAvatars } from './tables/table_image';
 import { messages } from './tables/table_message';
+import { generateRandomString } from './helper';
 
 //-----------------------------------------------
 // Message
 //-----------------------------------------------
-const message = table(
-  { name: 'message', public: true },
-  {
-    id:t.u64().primaryKey().autoInc(),
-    senderId: t.identity().index('btree'),
-    content: t.string(),
-    createdAt: t.timestamp(),
-  }
-);
+// const message = table(
+//   { name: 'message', public: true },
+//   {
+//     id:t.u64().primaryKey().autoInc(),
+//     senderId: t.identity().index('btree'),
+//     content: t.string(),
+//     createdAt: t.timestamp(),
+//   }
+// );
 
 //-----------------------------------------------
 // SPACETIME SCHEMA
@@ -76,10 +77,12 @@ export const onConnect = spacetimedb.clientConnected(ctx => {
     });
   } else {
     // let generateName = generateRandomString(ctx,12);
-    let generateName = String(ctx.newUuidV7()).replaceAll("-","");
+    let generateId = String(ctx.newUuidV7()).replaceAll("-","");
+    let generateName = generateRandomString(ctx, 16);
+
     ctx.db.users.insert({
       identity: ctx.sender,
-      userId: generateName,
+      userId: generateId,
       name: generateName,
       online: true,
       status: {tag:"Online"},

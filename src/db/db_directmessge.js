@@ -13,12 +13,27 @@ function addOrUpdateDC(ent) {
   dbDirectConversations.val = newMap;                  // assign new Map → triggers update
 }
 
-function deleteDC(id) {
-  if (!id) return;
-  // Create new Map without the item
-  const newMap = new Map(dbDirectConversations.val);
-  newMap.delete(id);
-  // Update the state (this is what makes VanJS detect the change)
+function deleteDC(row) {
+  if (!row || !row.id) return;
+  
+  const currentMap = dbDirectConversations.val;
+  const existingEntry = currentMap.get(row.id);
+
+  // If it's already gone from our local state, nothing to do
+  if (!existingEntry) return;
+
+  // COMPARE TIMESTAMPS
+  // If the 'existingEntry' has a newer timestamp than the 'row' being deleted,
+  // it means the Insert (the update) already happened. DO NOT DELETE.
+  if (existingEntry.lastMessageAt.toMillis() > row.lastMessageAt.toMillis()) {
+    console.log("Ignore Delete: Local state is newer than the delete event.");
+    return;
+  }
+
+  // If they are the same, it means the conversation was actually removed 
+  // (e.g. filtered out of the view entirely), so we delete it.
+  const newMap = new Map(currentMap);
+  newMap.delete(row.id);
   dbDirectConversations.val = newMap;
 }
 
@@ -30,20 +45,21 @@ export function setupDBDirectMessage(){
     // .subscribe(tables.my_conversations.where(r=>r.userB.eq(userId.val)));
     .subscribe(tables.my_conversations);
 
+  //note this get delete while update must be the view call for delete
+  // conn.db.my_conversations.onDelete((ctx, row)=>{
+  //   console.log("last conversations Delete...", row);
+  //   deleteDC(row);
+  // });
+
   conn.db.my_conversations.onInsert((ctx, row)=>{
     console.log("last conversations Added...", row);
     addOrUpdateDC(row);
   });
 
-  conn.db.my_conversations.onUpdate((ctx, oldRow, newRow)=>{
-    console.log("last conversations Added...", newRow);
-    addOrUpdateDC(newRow);
-  });
-
-  //note this get delete while update must be the view call for delete
-  conn.db.my_conversations.onDelete((ctx, row)=>{
-    console.log("last conversations Delete...", row);
-    // deleteDC(row.id);
-  });
+  // no update? since view only need read doc.
+  // conn.db.my_conversations.onUpdate((ctx, oldRow, newRow)=>{
+  //   console.log("last conversations update...", newRow);
+  //   addOrUpdateDC(newRow);
+  // });
 }
 

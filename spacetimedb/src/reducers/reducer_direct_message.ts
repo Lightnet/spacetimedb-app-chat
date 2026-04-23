@@ -73,10 +73,12 @@ export const mark_conversation_as_read = spacetimedb.reducer(
   (ctx, {id})=>{
 
     const conv = ctx.db.directConversations.id.find(id);
+    const user = ctx.db.users.identity.find(ctx.sender); // Current authenticated user
+    if(!user) return;
 
     if (!conv) return;
 
-    const isUserA = id === conv.userA;
+    const isUserA = user.userId === conv.userA;
 
     ctx.db.directConversations.id.update({
       ...conv,

@@ -36,12 +36,12 @@ export function setupDBContact(){
     .subscribe(tables.view_contacts);
 
   conn.db.view_contacts.onInsert((ctx, row)=>{
-    console.log("Contact Added...", row);
+    // console.log("Contact Added...", row);
     addOrUpdateContact(row);
   });
 
   conn.db.view_contacts.onDelete((ctx, row)=>{
-    console.log("Contact Delete...", row);
+    // console.log("Contact Delete...", row);
     deleteContact(row.id);
   });
 }

@@ -30,8 +30,8 @@ export const directConversations = table(
     // Normalized unique key for any two users (smaller ID first)
     id: t.string().primaryKey(),   // e.g. "identityA:identityB" with A < B lexicographically
 
-    userA: t.string(),
-    userB: t.string(),
+    userA: t.string().index('btree'),
+    userB: t.string().index('btree'),
     lastMessageAt: t.timestamp(),
     lastMessagePreview: t.string().optional(),
     unreadCountA: t.u32().default(0),

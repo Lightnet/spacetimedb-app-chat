@@ -7,9 +7,13 @@ import { onDetach } from "../helpers/ondetach";
 
 const { div, input, textarea, button, span, img, label, p } = van.tags;
 
+function directMessageId(id,conId){
+  const conn = stateConn.val;
+  conn.reducers.markConversationAsRead({id:conId});// mark as read when open.
+  van.add(document.body, modalDirectMessage(id));
+}
 
 export function DirectConversationsList(){
-
   function renderUnread(item){
     if(item.userA == userId.val ){
       if(item.unreadCountA > 0){
@@ -24,12 +28,22 @@ export function DirectConversationsList(){
     return span()
   }
 
+  function fromUser(item){
+    if(item.userB != userId.val){
+      return label({onclick: () => directMessageId(item.userB,item.id)},"["+item.userB.substring(0,20)+"]");
+    }else{
+      return label({onclick: () => directMessageId(item.userA,item.id)},"["+item.userA.substring(0,20)+"]")
+    }
+  }
+
   const groups = van.derive(()=>{
     const chats = Array.from(dbDirectConversations.val.values());
     // console.log(chats);
     return div(
       chats.map(group => div({id:'group-chat-'+group.id},
-        label("["+group.userB.substring(0,20)+"]"),
+        // label("["+group.userB.substring(0,20)+"]"),
+        fromUser(group),
+
         // button({onclick:()=>setupChatPanel(group.id, group.name)},'[ Join ]'),
         // span(' [Mgs] '),
         renderUnread(group),
@@ -84,7 +98,7 @@ export function modalDirectMessage(senderId){
 
   function update_messages(ctx, row){
     let side = '';
-    console.log("group msg...");
+    // console.log("group msg...");
     // console.log(row);
     if(row.recipientId == userId.val){
       // console.log("FOUND USER???");
